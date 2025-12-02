@@ -12,6 +12,7 @@ import pymongo
 from bs4 import BeautifulSoup
 
 from src.models.crawler_model import RessourceEducativeModel
+from src.services.user_query_service_simple import get_user_query_service_simple
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,9 @@ class SimpleCrawlerService:
         self.mongodb_url = mongodb_url
         self.mongodb_db = mongodb_db
         self.mongodb_collection = "ressources_educatives"
+        
+        # Service pour gérer les requêtes utilisateur
+        self.user_query_service = get_user_query_service_simple(mongodb_url, mongodb_db)
         
         # Vérifier la connexion MongoDB
         self._verifier_connexion_mongo()
@@ -65,6 +69,13 @@ class SimpleCrawlerService:
             langues = ['fr', 'en']
         
         logger.info(f"🚀 Début de collecte pour '{question}' - Sources: {sources}, Max par site: {max_par_site}")
+        
+        # 📝 Sauvegarder la question de l'utilisateur avec son embedding
+        try:
+            user_query_response = await self.user_query_service.sauvegarder_requete(question)
+            logger.info(f"💾 Question sauvegardée (ID: {user_query_response.id}, Embedding: {user_query_response.embedding_genere})")
+        except Exception as e:
+            logger.warning(f"⚠️ Erreur sauvegarde question: {e}")
         
         debut_collecte = time.time()
         resultats_collecte = {

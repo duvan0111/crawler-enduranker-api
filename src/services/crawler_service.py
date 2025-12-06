@@ -374,7 +374,7 @@ class SimpleCrawlerService:
         return ressources
     
     async def _sauvegarder_mongodb(self, ressources: List[RessourceEducativeModel], question: str, source: str) -> int:
-        """Sauvegarde les ressources dans MongoDB"""
+        """Sauvegarde les ressources dans MongoDB et retourne les IDs des nouvelles ressources"""
         if not ressources:
             return 0
         
@@ -384,6 +384,8 @@ class SimpleCrawlerService:
             collection = db[self.mongodb_collection]
             
             nb_sauvegardes = 0
+            nouveaux_ids = []
+            
             for ressource in ressources:
                 doc = ressource.dict()
                 
@@ -394,10 +396,22 @@ class SimpleCrawlerService:
                 })
                 
                 if not existing:
-                    collection.insert_one(doc)
+                    result = collection.insert_one(doc)
+                    nouveaux_ids.append(str(result.inserted_id))
                     nb_sauvegardes += 1
             
             client.close()
+            
+            # Mettre à jour l'index FAISS avec les nouvelles ressources
+            if nouveaux_ids:
+                try:
+                    from src.services.nlp_service import get_nlp_service
+                    nlp_service = get_nlp_service(self.mongodb_url, self.mongodb_db)
+                    update_result = await nlp_service.ajouter_ressources_a_index(nouveaux_ids)
+                    logger.info(f"🔄 Index FAISS mis à jour: {update_result}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Erreur mise à jour index FAISS: {e}")
+            
             return nb_sauvegardes
             
         except Exception as e:

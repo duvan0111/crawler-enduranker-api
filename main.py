@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
 
-from src.routes import example_routes, crawler_routes, user_query_routes
+from src.routes import crawler_routes, user_query_routes
 from src.database import db
 
 # Charger les variables d'environnement
@@ -41,7 +41,6 @@ app.add_middleware(
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
 # Enregistrer les routes
-app.include_router(example_routes.router)
 app.include_router(crawler_routes.router)
 app.include_router(user_query_routes.router)
 

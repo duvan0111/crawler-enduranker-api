@@ -1,13 +1,13 @@
 """
-Version simplifiée du service de requêtes utilisateur sans les dépendances lourdes.
-Cette version utilise un système d'embedding basique sans sentence-transformers.
+Service de requêtes utilisateur avec sentence-transformers.
+Utilise le même modèle que le crawler pour générer les embeddings des questions.
 """
 
 import logging
 import pymongo
-import hashlib
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
+from sentence_transformers import SentenceTransformer
 
 from src.models.user_query_model import UserQueryModel, UserQueryResponseModel
 
@@ -15,13 +15,18 @@ logger = logging.getLogger(__name__)
 
 
 class UserQueryServiceSimple:
-    """Service simplifié pour gérer les requêtes utilisateur sans embeddings complexes"""
+    """Service pour gérer les requêtes utilisateur avec embeddings sentence-transformers"""
     
     def __init__(self, mongodb_url: str, mongodb_db: str):
         """Initialise le service des requêtes utilisateur"""
         self.mongodb_url = mongodb_url
         self.mongodb_db = mongodb_db
         self.mongodb_collection = "users_queries"
+        
+        # Charger le modèle sentence-transformers (même que le crawler)
+        logger.info("📥 Chargement du modèle sentence-transformers pour les questions...")
+        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        logger.info("✅ Modèle sentence-transformers chargé (384 dimensions)")
         
         # Vérifier la connexion MongoDB
         self._verifier_connexion_mongo()
@@ -63,23 +68,23 @@ class UserQueryServiceSimple:
             logger.warning(f"⚠️ Erreur détection langue: {e}")
             return 'unknown'
     
-    def _generer_embedding_simple(self, question: str) -> Optional[List[float]]:
-        """Génère un embedding simple basé sur un hash de la question"""
+    def _generer_embedding(self, question: str) -> Optional[List[float]]:
+        """
+        Génère un embedding de 384 dimensions avec sentence-transformers/all-MiniLM-L6-v2.
+        Utilise le même modèle que le crawler pour cohérence.
+        """
+        if not question or not question.strip():
+            return None
+            
         try:
-            # Utilise un hash MD5 pour créer un "embedding" basique
-            hash_obj = hashlib.md5(question.lower().encode())
-            hash_hex = hash_obj.hexdigest()
+            # Générer l'embedding avec le modèle sentence-transformers
+            embedding = self.embedding_model.encode(question.strip(), show_progress_bar=False)
             
-            # Convertit le hash en vecteur de 16 floats entre -1 et 1
-            embedding = []
-            for i in range(0, len(hash_hex), 2):
-                hex_pair = hash_hex[i:i+2]
-                int_val = int(hex_pair, 16)
-                # Normalise entre -1 et 1
-                float_val = (int_val - 127.5) / 127.5
-                embedding.append(float_val)
+            # Convertir numpy array en liste Python
+            embedding_list = embedding.tolist()
             
-            return embedding[:16]  # Limite à 16 dimensions
+            logger.debug(f"✅ Embedding question généré: {len(embedding_list)} dimensions")
+            return embedding_list
             
         except Exception as e:
             logger.error(f"❌ Erreur génération embedding: {e}")
@@ -93,8 +98,8 @@ class UserQueryServiceSimple:
             # Détecter la langue
             langue_detectee = self._detecter_langue_simple(question)
             
-            # Générer l'embedding simple
-            embedding = self._generer_embedding_simple(question)
+            # Générer l'embedding avec sentence-transformers
+            embedding = self._generer_embedding(question)
             
             # Créer le modèle de requête
             user_query = UserQueryModel(

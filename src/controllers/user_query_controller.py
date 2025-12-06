@@ -10,7 +10,7 @@ from src.models.user_query_model import (
     UserQueryRequestModel,
     UserQueryResponseModel
 )
-from src.services.user_query_service_simple import get_user_query_service_simple
+from src.services.user_query_service import get_user_query_service_simple
 
 
 class UserQueryController:

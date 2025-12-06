@@ -9,4 +9,9 @@ beautifulsoup4==4.12.2
 requests==2.31.0
 lxml==4.9.3
 sentence-transformers==2.2.2
+transformers==4.30.0
+torch>=2.0.0
+huggingface-hub==0.16.4
 langdetect==1.0.9
+numpy>=1.24.0
+scipy>=1.10.0

@@ -10,9 +10,10 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import pymongo
 from bs4 import BeautifulSoup
+from sentence_transformers import SentenceTransformer
 
 from src.models.crawler_model import RessourceEducativeModel
-from src.services.user_query_service_simple import get_user_query_service_simple
+from src.services.user_query_service import get_user_query_service_simple
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,11 @@ class SimpleCrawlerService:
         # Service pour gérer les requêtes utilisateur
         self.user_query_service = get_user_query_service_simple(mongodb_url, mongodb_db)
         
+        # Charger le modèle sentence-transformers
+        logger.info("📥 Chargement du modèle sentence-transformers/all-MiniLM-L6-v2...")
+        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        logger.info("✅ Modèle sentence-transformers chargé (384 dimensions)")
+        
         # Vérifier la connexion MongoDB
         self._verifier_connexion_mongo()
         
@@ -43,6 +49,28 @@ class SimpleCrawlerService:
             error_msg = f"❌ Impossible de se connecter à MongoDB: {e}"
             logger.error(error_msg)
             raise ConnectionError(error_msg)
+    
+    def _generer_embedding(self, texte: str) -> Optional[List[float]]:
+        """
+        Génère un embedding de 384 dimensions avec sentence-transformers/all-MiniLM-L6-v2.
+        Ce modèle est optimisé pour la recherche sémantique et produit des embeddings de haute qualité.
+        """
+        if not texte or not texte.strip():
+            return None
+            
+        try:
+            # Générer l'embedding avec le modèle sentence-transformers
+            embedding = self.embedding_model.encode(texte.strip(), show_progress_bar=False)
+            
+            # Convertir numpy array en liste Python
+            embedding_list = embedding.tolist()
+            
+            logger.debug(f"✅ Embedding généré: {len(embedding_list)} dimensions")
+            return embedding_list
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur génération embedding: {e}")
+            return None
     
     async def collecter_ressources(
         self,
@@ -199,6 +227,10 @@ class SimpleCrawlerService:
                         
                         if 'query' in content_data and 'pages' in content_data['query']:
                             page_data = content_data['query']['pages'].get(str(page_id), {})
+                            texte_contenu = page_data.get('extract', '')
+                            
+                            # Générer l'embedding du texte
+                            embedding = self._generer_embedding(texte_contenu)
                             
                             ressource = RessourceEducativeModel(
                                 titre=titre,
@@ -206,7 +238,8 @@ class SimpleCrawlerService:
                                 source='wikipedia',
                                 langue=langue,
                                 auteur='Wikipedia Contributors',
-                                texte=page_data.get('extract', ''),
+                                texte=texte_contenu,
+                                embedding=embedding,
                                 popularite=result.get('wordcount', 0),
                                 type_ressource='article',
                                 mots_cles=[question],
@@ -251,6 +284,11 @@ class SimpleCrawlerService:
             
             if 'items' in data:
                 for repo in data['items'][:max_results]:
+                    texte_description = repo.get('description', '') if repo.get('description') else ''
+                    
+                    # Générer l'embedding du texte de description
+                    embedding = self._generer_embedding(texte_description)
+                    
                     ressource = RessourceEducativeModel(
                         titre=repo.get('full_name', ''),
                         url=repo.get('html_url', ''),
@@ -258,7 +296,8 @@ class SimpleCrawlerService:
                         langue=repo.get('language', 'unknown'),
                         auteur=repo.get('owner', {}).get('login', 'unknown'),
                         date=repo.get('created_at', ''),
-                        texte=repo.get('description', '') if repo.get('description') else '',
+                        texte=texte_description,
+                        embedding=embedding,
                         popularite=repo.get('stargazers_count', 0),
                         type_ressource='repository',
                         mots_cles=repo.get('topics', []) if repo.get('topics') else [question],
@@ -306,13 +345,19 @@ class SimpleCrawlerService:
             
             # Générer des ressources simulées
             for i, template in enumerate(articles_templates[:max_results]):
+                texte_description = template["description"]
+                
+                # Générer l'embedding du texte de description
+                embedding = self._generer_embedding(texte_description)
+                
                 ressource = RessourceEducativeModel(
                     titre=template["titre"],
                     url=template["url"],
                     source='medium',
                     langue='en',
                     auteur=template["auteur"],
-                    texte=template["description"],
+                    texte=texte_description,
+                    embedding=embedding,
                     popularite=100 - (i * 10),  # Score décroissant
                     type_ressource='article',
                     mots_cles=[question],

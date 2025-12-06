@@ -11,6 +11,7 @@ class RessourceEducativeModel(BaseModel):
     auteur: Optional[str] = Field(None, description="Auteur de la ressource")
     date: Optional[str] = Field(None, description="Date de publication")
     texte: Optional[str] = Field(None, description="Contenu textuel de la ressource")
+    embedding: Optional[List[float]] = Field(None, description="Représentation vectorielle du texte")
     popularite: Optional[int] = Field(None, description="Score de popularité")
     type_ressource: Optional[str] = Field(None, description="Type de ressource")
     mots_cles: Optional[List[str]] = Field(default_factory=list, description="Mots-clés associés")
@@ -27,6 +28,7 @@ class RessourceEducativeModel(BaseModel):
                 "auteur": "John Doe",
                 "date": "2024-01-15",
                 "texte": "Le machine learning est...",
+                "embedding": "[384 dimensions vector from sentence-transformers/all-MiniLM-L6-v2]",
                 "popularite": 150,
                 "type_ressource": "article",
                 "mots_cles": ["machine learning", "IA", "éducation"],

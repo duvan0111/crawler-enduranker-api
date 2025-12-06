@@ -12,7 +12,7 @@ from src.models.crawler_model import (
     SearchRequestModel,
     RessourceEducativeModel
 )
-from src.services.simple_crawler_service import get_simple_crawler_service
+from src.services.crawler_service import get_simple_crawler_service
 
 
 class CrawlerController:

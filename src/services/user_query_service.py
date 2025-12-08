@@ -239,3 +239,6 @@ def get_user_query_service_simple(mongodb_url: str, mongodb_db: str) -> UserQuer
     if _user_query_service_simple_instance is None:
         _user_query_service_simple_instance = UserQueryServiceSimple(mongodb_url, mongodb_db)
     return _user_query_service_simple_instance
+
+# Alias pour compatibilité
+get_user_query_service = get_user_query_service_simple

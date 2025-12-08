@@ -33,7 +33,7 @@ class RerankingService:
         mongodb_url: str, 
         mongodb_db: str, 
         model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
-        model_path: str = "models/cross_encoder"
+        model_path: str = "models/cross_encoder_finetuned"
     ):
         """
         Initialise le service de re-ranking
@@ -48,7 +48,7 @@ class RerankingService:
         self.mongodb_db = mongodb_db
         self.feedback_collection = "user_feedbacks"
         self.inference_collection = "inference"
-        self.model_path = model_path
+        self.model_path = "models/cross_encoder_finetuned"
         self.base_model_name = model_name
         
         # Créer le dossier pour le modèle s'il n'existe pas
@@ -60,16 +60,21 @@ class RerankingService:
     def _charger_modele(self):
         """Charge le modèle cross-encoder (fine-tuné ou de base)"""
         try:
-            # Essayer de charger un modèle fine-tuné
-            if os.path.exists(os.path.join(self.model_path, "config.json")):
+            # Vérifier si un modèle fine-tuné existe
+            config_file = os.path.join(self.model_path, "config.json")
+            
+            if os.path.exists(config_file):
+                # Charger le modèle fine-tuné
                 logger.info(f"📥 Chargement du modèle fine-tuné depuis {self.model_path}...")
                 self.cross_encoder = CrossEncoder(self.model_path)
                 logger.info("✅ Modèle fine-tuné chargé avec succès")
             else:
-                # Charger le modèle de base
+                # Charger le modèle de base depuis HuggingFace
+                logger.info(f"📥 Aucun modèle fine-tuné trouvé dans {self.model_path}")
                 logger.info(f"📥 Chargement du modèle de base {self.base_model_name}...")
                 self.cross_encoder = CrossEncoder(self.base_model_name)
                 logger.info("✅ Modèle de base chargé avec succès")
+                logger.info("💡 Pour utiliser un modèle fine-tuné, exécutez le notebook: notebooks/fine_tune_cross_encoder.ipynb")
                 
         except Exception as e:
             logger.error(f"❌ Erreur chargement modèle: {e}")
@@ -77,7 +82,7 @@ class RerankingService:
             logger.warning("⚠️  Le service fonctionnera en mode dégradé (sans re-ranking).")
             logger.warning("⚠️  Solutions possibles :")
             logger.warning("    1. Augmenter le timeout : export HF_HUB_DOWNLOAD_TIMEOUT=600")
-            logger.warning("    2. Télécharger le modèle manuellement : huggingface-cli download cross-encoder/ms-marco-MiniLM-L-6-v2")
+            logger.warning(f"    2. Télécharger le modèle manuellement : huggingface-cli download {self.base_model_name}")
             logger.warning("    3. Utiliser un miroir : export HF_ENDPOINT=https://hf-mirror.com")
             logger.warning("    4. Consulter TROUBLESHOOTING.md pour plus de solutions")
             self.cross_encoder = None  # Mode dégradé
@@ -115,6 +120,8 @@ class RerankingService:
         
         try:
             logger.info(f"🔄 Re-ranking de {len(resultats_faiss)} résultats avec cross-encoder...")
+
+            self._charger_modele()
             
             # Préparer les paires (question, document)
             paires = []
@@ -395,7 +402,16 @@ class RerankingService:
         learning_rate: float = 2e-5
     ) -> Dict:
         """
-        Fine-tune le modèle cross-encoder sur les feedbacks utilisateurs
+        ⚠️  DÉPRÉCIÉ : Utilisez le notebook Jupyter pour le fine-tuning
+        
+        Le fine-tuning se fait maintenant via le notebook :
+        notebooks/fine_tune_cross_encoder.ipynb
+        
+        Ce notebook offre :
+        - Visualisations détaillées
+        - Métriques complètes
+        - Analyse des performances
+        - Rapport d'entraînement
         
         Args:
             num_epochs: Nombre d'époques d'entraînement
@@ -403,93 +419,23 @@ class RerankingService:
             learning_rate: Taux d'apprentissage
             
         Returns:
-            Dictionnaire avec les statistiques d'entraînement
+            Message de redirection vers le notebook
         """
-        logger.info("🎓 Début du fine-tuning du cross-encoder...")
+        logger.warning("⚠️  Fine-tuning via API déprécié. Utilisez le notebook Jupyter.")
         
-        try:
-            # Récupérer les données d'entraînement
-            training_pairs = await self.recuperer_donnees_entrainement()
-            
-            if len(training_pairs) < 10:
-                return {
-                    "status": "error",
-                    "message": f"Pas assez de données ({len(training_pairs)} paires). Minimum 10 requis."
-                }
-            
-            # Préparer les données pour sentence-transformers
-            train_samples = []
-            for pair in training_pairs:
-                train_samples.append({
-                    'texts': [pair.query_text, pair.document_text],
-                    'label': pair.label
-                })
-            
-            # Importer les modules nécessaires
-            from sentence_transformers import InputExample
-            from torch.utils.data import DataLoader
-            
-            # Créer les InputExamples
-            train_examples = [
-                InputExample(texts=sample['texts'], label=sample['label'])
-                for sample in train_samples
-            ]
-            
-            # Créer le DataLoader
-            train_dataloader = DataLoader(
-                train_examples, 
-                shuffle=True, 
-                batch_size=batch_size
-            )
-            
-            # Configuration de l'entraînement
-            warmup_steps = int(len(train_dataloader) * num_epochs * 0.1)
-            
-            logger.info(f"📚 Entraînement sur {len(train_examples)} exemples...")
-            logger.info(f"   Epochs: {num_epochs}, Batch size: {batch_size}")
-            
-            # Fine-tuning
-            self.cross_encoder.fit(
-                train_dataloader=train_dataloader,
-                epochs=num_epochs,
-                warmup_steps=warmup_steps,
-                output_path=self.model_path,
-                show_progress_bar=True
-            )
-            
-            # Sauvegarder les métadonnées
-            metadata = {
-                "model_version": f"finetuned_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "base_model": self.base_model_name,
-                "num_training_samples": len(train_examples),
-                "num_epochs": num_epochs,
-                "batch_size": batch_size,
-                "learning_rate": learning_rate,
-                "training_date": datetime.now().isoformat()
-            }
-            
-            with open(os.path.join(self.model_path, "metadata.pkl"), 'wb') as f:
-                pickle.dump(metadata, f)
-            
-            logger.info(f"✅ Fine-tuning terminé! Modèle sauvegardé dans {self.model_path}")
-            
-            # Recharger le modèle fine-tuné
-            self._charger_modele()
-            
-            return {
-                "status": "success",
-                "num_training_samples": len(train_examples),
-                "num_epochs": num_epochs,
-                "model_path": self.model_path,
-                "metadata": metadata
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur fine-tuning: {e}")
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+        return {
+            "status": "deprecated",
+            "message": "Le fine-tuning via API est déprécié. Utilisez le notebook Jupyter pour plus de contrôle et de visualisations.",
+            "notebook_path": "notebooks/fine_tune_cross_encoder.ipynb",
+            "instructions": [
+                "1. Installer Jupyter : pip install jupyter notebook",
+                "2. Lancer : cd notebooks && jupyter notebook",
+                "3. Ouvrir : fine_tune_cross_encoder.ipynb",
+                "4. Exécuter les cellules dans l'ordre",
+                "5. Le modèle fine-tuné sera automatiquement utilisé par l'API"
+            ],
+            "documentation": "notebooks/README.md"
+        }
     
     async def obtenir_statistiques_feedback(self) -> FineTuningStatsModel:
         """
@@ -602,7 +548,7 @@ def get_reranking_service(
     mongodb_url: str, 
     mongodb_db: str,
     model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
-    model_path: str = "models/cross_encoder"
+    model_path: str = "models/cross_encoder_finetuned"
 ) -> RerankingService:
     """
     Obtenir l'instance du service de re-ranking (singleton)

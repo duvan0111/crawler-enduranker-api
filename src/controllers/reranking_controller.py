@@ -194,9 +194,10 @@ class RerankingController:
         learning_rate: float
     ) -> Dict[str, Any]:
         """
-        Lance le fine-tuning du cross-encoder sur les feedbacks utilisateurs.
+        ⚠️  DÉPRÉCIÉ : Utilisez le notebook Jupyter pour le fine-tuning
         
-        ⚠️  ATTENTION: Cette opération peut prendre plusieurs minutes
+        Le fine-tuning se fait maintenant via le notebook :
+        notebooks/fine_tune_cross_encoder.ipynb
         
         Args:
             num_epochs: Nombre d'époques d'entraînement
@@ -204,39 +205,21 @@ class RerankingController:
             learning_rate: Taux d'apprentissage
             
         Returns:
-            Résultat du fine-tuning
+            Message de redirection vers le notebook
         """
         try:
-            # Vérifier qu'il y a assez de données
-            stats = await self.reranking_service.obtenir_statistiques_feedback()
-            if stats.nb_training_pairs < 10:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Pas assez de feedbacks pour le fine-tuning. "
-                           f"Actuel: {stats.nb_training_pairs}, minimum: 10"
-                )
-            
             result = await self.reranking_service.fine_tuner_modele(
                 num_epochs=num_epochs,
                 batch_size=batch_size,
                 learning_rate=learning_rate
             )
             
-            if result["status"] == "error":
-                raise HTTPException(status_code=400, detail=result["message"])
+            return result
             
-            return {
-                "status": "success",
-                "message": "Fine-tuning terminé avec succès",
-                "details": result
-            }
-            
-        except HTTPException:
-            raise
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Erreur fine-tuning: {str(e)}"
+                detail=f"Erreur: {str(e)}"
             )
     
     def predire_score_pertinence(self, query: str, document: str) -> Dict[str, Any]:

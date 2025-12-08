@@ -1,0 +1,44 @@
+======================================================================
+📊 RAPPORT DE FINE-TUNING - CROSS-ENCODER EDURANKER
+======================================================================
+
+📅 Date : 2025-12-08 17:00:52
+
+🔧 CONFIGURATION
+----------------------------------------------------------------------
+Modèle de base       : cross-encoder/ms-marco-MiniLM-L-6-v2
+Sortie               : /home/dv-fk/Documents/School/Master 2 DS/INF5101 Traitement multimédia des données/Projet  EduRanker/crawler-enduranker-api/models/cross_encoder_finetuned
+Device               : cpu
+MongoDB URL          : mongodb://localhost:27017
+Database             : eduranker_db
+
+📊 DONNÉES
+----------------------------------------------------------------------
+Total échantillons   : 2
+Entraînement         : 1
+Validation           : 1
+Distribution labels  :
+  - Like (1.0)       : 2
+  - Dislike (0.0)    : 0
+
+🎛️  HYPERPARAMÈTRES
+----------------------------------------------------------------------
+Epochs               : 3
+Batch size           : 16
+Learning rate        : 2e-05
+Warmup steps         : 0
+Durée totale         : 1.6s (0.0 min)
+
+📈 PERFORMANCES
+----------------------------------------------------------------------
+Métrique      | Avant    | Après    | Amélioration
+----------------------------------------------------------------------
+Accuracy     | 0.0000   | 0.0000   | +0.0000 (N/A)
+Precision    | 0.0000   | 0.0000   | +0.0000 (N/A)
+Recall       | 0.0000   | 0.0000   | +0.0000 (N/A)
+F1           | 0.0000   | 0.0000   | +0.0000 (N/A)
+Auc          | 0.5000   | 0.5000   | +0.0000 (+0.0%)
+
+======================================================================
+✅ Fine-tuning terminé avec succès !
+======================================================================

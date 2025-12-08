@@ -45,18 +45,32 @@ async def obtenir_statistiques_feedback():
     return await controller.obtenir_statistiques_feedback()
 
 
-@router.post("/fine-tune")
+@router.post("/fine-tune", deprecated=True)
 async def lancer_fine_tuning(
     num_epochs: int = Query(default=3, ge=1, le=10, description="Nombre d'époques"),
     batch_size: int = Query(default=16, ge=4, le=64, description="Taille des batchs"),
     learning_rate: float = Query(default=2e-5, gt=0, description="Taux d'apprentissage")
 ):
     """
-    Lance le fine-tuning du cross-encoder sur les feedbacks utilisateurs
+    ⚠️  DÉPRÉCIÉ : Utilisez le notebook Jupyter pour le fine-tuning
     
-    ⚠️  ATTENTION: Cette opération peut prendre plusieurs minutes
+    Le fine-tuning se fait maintenant via le notebook :
+    **notebooks/fine_tune_cross_encoder.ipynb**
     
-    Prérequis: Au moins 10 feedbacks (like/dislike) dans la base
+    Ce notebook offre :
+    - Visualisations détaillées des données
+    - Métriques complètes (accuracy, F1, AUC)
+    - Analyse comparative avant/après
+    - Rapport d'entraînement automatique
+    - Contrôle total des hyperparamètres
+    
+    **Instructions** :
+    1. `pip install jupyter notebook`
+    2. `cd notebooks && jupyter notebook`
+    3. Ouvrir `fine_tune_cross_encoder.ipynb`
+    4. Exécuter les cellules dans l'ordre
+    
+    Le modèle fine-tuné sera automatiquement chargé par l'API au redémarrage.
     """
     return await controller.lancer_fine_tuning(num_epochs, batch_size, learning_rate)
 

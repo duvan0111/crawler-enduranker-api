@@ -37,24 +37,15 @@ class UserFeedbackModel(BaseModel):
 
 
 class FeedbackRequestModel(BaseModel):
-    """Modèle pour soumettre un feedback"""
-    user_query_id: str = Field(..., description="ID de la requête utilisateur")
-    resource_id: str = Field(..., description="ID de la ressource")
-    query_text: str = Field(..., description="Texte de la requête")
-    resource_title: str = Field(..., description="Titre de la ressource")
+    """Modèle simplifié pour soumettre un feedback sur une inférence"""
+    inference_id: str = Field(..., description="ID de l'inférence (recommandation)")
     feedback_type: Literal["like", "dislike", "click", "view"] = Field(..., description="Type de feedback")
-    resource_text: Optional[str] = Field(None, description="Extrait du texte de la ressource")
-    session_id: Optional[str] = Field(None, description="ID de session")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "user_query_id": "507f1f77bcf86cd799439011",
-                "resource_id": "507f1f77bcf86cd799439012",
-                "query_text": "machine learning tutoriel",
-                "resource_title": "Introduction au Machine Learning",
-                "feedback_type": "like",
-                "session_id": "session_123"
+                "inference_id": "507f1f77bcf86cd799439013",
+                "feedback_type": "like"
             }
         }
 
@@ -81,6 +72,7 @@ class RerankingRequestModel(BaseModel):
 
 class RerankingResultModel(BaseModel):
     """Modèle pour un résultat après re-ranking"""
+    inference_id: Optional[str] = Field(None, description="ID de l'inférence (pour feedback)")
     resource_id: str = Field(..., description="ID de la ressource")
     titre: str = Field(..., description="Titre de la ressource")
     url: str = Field(..., description="URL de la ressource")
@@ -94,6 +86,7 @@ class RerankingResultModel(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "inference_id": "507f1f77bcf86cd799439013",
                 "resource_id": "507f1f77bcf86cd799439012",
                 "titre": "Introduction au Machine Learning",
                 "url": "https://example.com/ml-intro",

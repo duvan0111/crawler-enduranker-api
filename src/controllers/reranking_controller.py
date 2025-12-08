@@ -97,8 +97,20 @@ class RerankingController:
             # Étape 3: Formater les résultats et sauvegarder les inférences
             resultats_formates = []
             for res in resultats_finaux:
-                # Formater le résultat
+                # Sauvegarder l'inférence dans MongoDB
+                inference_result = await self.reranking_service.sauvegarder_inference(
+                    user_query_id=user_query_id,
+                    resource_id=res.get('_id', ''),
+                    faiss_score=res.get('faiss_score', res.get('score_similarite', 0.0)),
+                    reranking_score=res.get('reranking_score'),
+                    final_score=res.get('final_score', 0.0),
+                    rank=res.get('rank', 0),
+                    session_id=request.session_id
+                )
+                
+                # Formater le résultat avec l'ID de l'inférence
                 result = RerankingResultModel(
+                    inference_id=inference_result.get('inference_id') if inference_result.get('status') == 'success' else None,
                     resource_id=res.get('_id', ''),
                     titre=res.get('titre', 'Sans titre'),
                     url=res.get('url', ''),
@@ -110,17 +122,6 @@ class RerankingController:
                     rank=res.get('rank', 0)
                 )
                 resultats_formates.append(result)
-                
-                # Sauvegarder l'inférence dans MongoDB
-                await self.reranking_service.sauvegarder_inference(
-                    user_query_id=user_query_id,
-                    resource_id=res.get('_id', ''),
-                    faiss_score=res.get('faiss_score', res.get('score_similarite', 0.0)),
-                    reranking_score=res.get('reranking_score'),
-                    final_score=res.get('final_score', 0.0),
-                    rank=res.get('rank', 0),
-                    session_id=request.session_id
-                )
             
             duree_ms = (time.time() - start_time) * 1000
             
@@ -141,31 +142,25 @@ class RerankingController:
     
     async def soumettre_feedback(self, feedback: FeedbackRequestModel) -> Dict[str, Any]:
         """
-        Soumet un feedback utilisateur (like/dislike/click/view).
+        Met à jour le feedback d'une inférence.
         Ces feedbacks sont utilisés pour le fine-tuning du cross-encoder.
         
         Args:
-            feedback: Feedback utilisateur à enregistrer
+            feedback: Modèle contenant l'ID de l'inférence et le type de feedback
             
         Returns:
             Résultat de l'enregistrement du feedback
         """
         try:
             result = await self.reranking_service.sauvegarder_feedback(
-                query_id=feedback.user_query_id,
-                resource_id=feedback.resource_id,
-                feedback_type=feedback.feedback_type,
-                session_id=feedback.session_id
+                inference_id=feedback.inference_id,
+                feedback_type=feedback.feedback_type
             )
             
             if result.get("status") == "error":
                 raise HTTPException(status_code=400, detail=result["message"])
             
-            return {
-                "status": "success",
-                "message": "Feedback enregistré avec succès",
-                "feedback_id": result.get("feedback_id")
-            }
+            return result
             
         except HTTPException:
             raise

@@ -273,67 +273,40 @@ class RerankingService:
     
     async def sauvegarder_feedback(
         self,
-        query_id: str,
-        resource_id: str,
-        feedback_type: str,
-        session_id: Optional[str] = None
+        inference_id: str,
+        feedback_type: str
     ) -> Dict:
         """
-        Sauvegarde un feedback utilisateur dans MongoDB
+        Met à jour le feedback d'une inférence
         
         Args:
-            query_id: ID de la requête utilisateur
-            resource_id: ID de la ressource
+            inference_id: ID de l'inférence
             feedback_type: Type de feedback (like, dislike, click, view)
-            session_id: ID de session optionnel
             
         Returns:
             Dictionnaire avec le statut
         """
         try:
+            from bson import ObjectId
+            
             # Se connecter à MongoDB
             client = pymongo.MongoClient(self.mongodb_url)
             db = client[self.mongodb_db]
-            feedback_col = db[self.feedback_collection]
-            queries_col = db["user_queries"]
-            resources_col = db["ressources_educatives"]
+            inference_col = db[self.inference_collection]
             
-            # Récupérer la requête et la ressource
-            from bson import ObjectId
-            query = queries_col.find_one({"_id": ObjectId(query_id)})
-            resource = resources_col.find_one({"_id": ObjectId(resource_id)})
+            # Vérifier que l'inférence existe
+            inference = inference_col.find_one({"_id": ObjectId(inference_id)})
             
-            if not query or not resource:
+            if not inference:
                 client.close()
                 return {
                     "status": "error",
-                    "message": "Requête ou ressource introuvable"
+                    "message": f"Inférence {inference_id} introuvable"
                 }
             
-            # Créer le feedback
-            feedback = {
-                "user_query_id": query_id,
-                "resource_id": resource_id,
-                "query_text": query.get("question", ""),
-                "resource_title": resource.get("titre", ""),
-                "resource_text": resource.get("texte", "")[:500],  # Extrait
-                "feedback_type": feedback_type,
-                "relevance_score": 1.0 if feedback_type == "like" else 0.0 if feedback_type == "dislike" else 0.5,
-                "session_id": session_id,
-                "date_feedback": datetime.now(),
-                "metadata": {}
-            }
-            
-            # Sauvegarder dans MongoDB
-            result = feedback_col.insert_one(feedback)
-            
-            # Mettre à jour le feedback dans la collection inference
-            inference_col = db[self.inference_collection]
-            inference_col.update_one(
-                {
-                    "user_query_id": query_id,
-                    "resource_id": resource_id
-                },
+            # Mettre à jour le feedback dans l'inférence
+            result = inference_col.update_one(
+                {"_id": ObjectId(inference_id)},
                 {
                     "$set": {
                         "feedback": feedback_type,
@@ -342,15 +315,35 @@ class RerankingService:
                 }
             )
             
+            # Sauvegarder aussi dans la collection user_feedbacks pour historique
+            # feedback_col = db[self.feedback_collection]
+            # feedback_doc = {
+            #     "inference_id": inference_id,
+            #     "user_query_id": inference.get("user_query_id"),
+            #     "resource_id": inference.get("resource_id"),
+            #     "feedback_type": feedback_type,
+            #     "relevance_score": 1.0 if feedback_type == "like" else 0.0 if feedback_type == "dislike" else 0.5,
+            #     "session_id": inference.get("session_id"),
+            #     "date_feedback": datetime.now(),
+            #     "metadata": {}
+            # }
+            # feedback_result = feedback_col.insert_one(feedback_doc)
+            
             client.close()
             
-            logger.info(f"💾 Feedback sauvegardé: {feedback_type} pour requête {query_id}")
-            
-            return {
-                "status": "success",
-                "feedback_id": str(result.inserted_id),
-                "message": "Feedback sauvegardé avec succès"
-            }
+            if result.modified_count > 0:
+                logger.info(f"💾 Feedback '{feedback_type}' sauvegardé pour inférence {inference_id}")
+                return {
+                    "status": "success",
+                    "inference_id": inference_id,
+                    # "feedback_id": str(feedback_result.inserted_id),
+                    "message": "Feedback enregistré avec succès"
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "Aucune modification effectuée"
+                }
             
         except Exception as e:
             logger.error(f"❌ Erreur sauvegarde feedback: {e}")

@@ -1,323 +1,1153 @@
-# EduRanker Crawler API
+# 🎓 EduRanker - API Backend Intelligente
 
-Backend FastAPI pour le projet EduRanker avec système de crawling, recherche vectorielle et reranking intelligent.
+> **Système de recommandation de ressources éducatives avec IA**
+> 
+> Backend FastAPI avancé combinant crawling intelligent, recherche sémantique FAISS, et re-ranking par deep learning pour fournir les meilleures ressources éducatives.
 
-## 🎯 Fonctionnalités
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-- **🚀 Workflow Global** : Traitement complet de bout en bout (crawling → recherche → re-ranking → top 10)
-- **API REST complète** avec FastAPI
-- **Crawler de ressources éducatives** depuis Wikipedia, GitHub, Medium
-- **Recherche vectorielle FAISS** avec embeddings de pointe (sentence-transformers)
-- **Reranking intelligent** avec cross-encoder (Sentence-BERT)
-- **Système d'inférence** : tracking automatique de toutes les recommandations
-- **Feedback simplifié** : 2 champs seulement (inference_id + feedback_type)
-- **Fine-tuning** : amélioration continue du modèle avec les feedbacks
-- **Base de données MongoDB** pour le stockage
-- **Documentation interactive** avec Swagger UI
-- **Architecture MVC** (Models, Views, Controllers)
-- **Tests automatisés** et scripts d'analyse
+---
 
-## 🔥 Nouveau : Workflow Global
+## 📋 Table des Matières
 
-Le workflow global permet de traiter une requête utilisateur de bout en bout en **une seule requête API** :
+- [Vue d'Ensemble](#-vue-densemble)
+- [Fonctionnalités Principales](#-fonctionnalités-principales)
+- [Architecture](#-architecture)
+- [Workflow Global](#-workflow-global)
+- [Installation](#-installation)
+- [Utilisation](#-utilisation)
+- [API Endpoints](#-api-endpoints)
+- [Technologies](#-technologies)
+- [Documentation](#-documentation)
+- [Tests](#-tests)
+- [Performances](#-performances)
+- [Contributing](#-contributing)
+
+---
+
+## 🌟 Vue d'Ensemble
+
+**EduRanker** est une API backend intelligente qui permet de découvrir, analyser et classer automatiquement les meilleures ressources éducatives sur le web. Le système utilise des techniques avancées de NLP et de Machine Learning pour comprendre les questions des utilisateurs et leur fournir les ressources les plus pertinentes.
+
+### 🎯 Objectifs du Projet
+
+- **Automatiser** la recherche de ressources éducatives de qualité
+- **Classifier** intelligemment les ressources par pertinence
+- **Apprendre** continuellement des interactions utilisateurs
+- **Fournir** des recommandations personnalisées et précises
+
+### 🚀 Cas d'Usage
+
+- **Plateformes e-learning** : Recommandation de cours et tutoriels
+- **Assistants éducatifs** : Réponses contextuelles avec ressources
+- **Moteurs de recherche académiques** : Classement intelligent
+- **Systèmes de gestion des connaissances** : Curation automatique
+
+---
+
+## ✨ Fonctionnalités Principales
+
+### 🔥 Workflow Global (All-in-One)
+
+Le **workflow global** est la fonctionnalité phare qui traite une requête de bout en bout :
 
 ```bash
-# Exemple : Obtenir le top 10 des meilleures ressources
+Question → Crawling → Recherche Sémantique → Re-ranking → Top 10 Résultats
+```
+
+**Une seule requête API pour tout obtenir !**
+
+```bash
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Comment apprendre le machine learning ?"}'
+```
+
+➡️ **[Guide Complet du Workflow](docs/WORKFLOW_GUIDE.md)**
+
+### 🕷️ Crawler Multi-Sources Intelligent
+
+- **Wikipedia** : Articles éducatifs multilingues (FR/EN)
+- **GitHub** : Repositories, README, documentation
+- **Medium** : Articles de blog et tutoriels
+- **Génération automatique d'embeddings** (384 dimensions)
+- **Extraction de métadonnées** : auteur, date, mots-clés
+
+### 🔍 Recherche Sémantique FAISS
+
+- **Index vectoriel FAISS** pour recherche ultra-rapide
+- **Sentence-Transformers** (all-MiniLM-L6-v2)
+- **Similarité cosine** pour matching sémantique
+- **Scalable** : Gère des millions de ressources
+- **Persistance** : Sauvegarde/chargement de l'index
+
+### 🎯 Re-ranking avec Cross-Encoder
+
+- **Modèle BERT** (ms-marco-MiniLM-L-6-v2)
+- **Évaluation fine** de la pertinence
+- **Fine-tuning** avec feedbacks utilisateurs
+- **Amélioration continue** des performances
+
+### 💾 Système d'Inférence et Feedback
+
+- **Tracking automatique** de toutes les recommandations
+- **Feedback simplifié** : like/dislike/click/view
+- **Collection MongoDB** dédiée avec indexation
+- **Analyse de performance** et métriques
+- **Préparation fine-tuning** automatique
+
+### 📊 API REST Complète
+
+- **FastAPI** avec documentation interactive
+- **Architecture MVC** propre et maintenable
+- **Validation Pydantic** des données
+- **Gestion d'erreurs** robuste
+- **CORS configuré** pour intégration frontend
+
+---
+
+## 🏗️ Architecture
+
+### Architecture Globale
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT (Frontend)                         │
+│                  Web App / Mobile App / API Client               │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ HTTP/REST
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      FASTAPI APPLICATION                         │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│  │   Routes     │  │ Controllers  │  │   Services    │        │
+│  │              │  │              │  │               │        │
+│  │ - Workflow   │──│ - Workflow   │──│ - Workflow    │        │
+│  │ - Crawler    │  │ - Crawler    │  │ - Crawler     │        │
+│  │ - NLP        │  │ - NLP        │  │ - NLP         │        │
+│  │ - Reranking  │  │ - Reranking  │  │ - Reranking   │        │
+│  │ - Queries    │  │ - Queries    │  │ - Queries     │        │
+│  └──────────────┘  └──────────────┘  └──────────────┘        │
+│                                                                  │
+└──────────────┬───────────────────────────┬─────────────────────┘
+               │                           │
+               ▼                           ▼
+┌──────────────────────────┐  ┌────────────────────────────────┐
+│      MONGODB             │  │    FAISS INDEX (Local)         │
+│                          │  │                                │
+│ Collections:             │  │ - Vector embeddings            │
+│ - ressources_educatives  │  │ - Fast similarity search       │
+│ - users_queries          │  │ - Persisted on disk            │
+│ - inference              │  │                                │
+│ - user_feedbacks         │  │                                │
+└──────────────────────────┘  └────────────────────────────────┘
+```
+
+### Architecture MVC
+
+```
+src/
+├── routes/              # Définition des endpoints API
+│   ├── workflow_routes.py      # Route principale du workflow
+│   ├── crawler_routes.py       # Routes de crawling
+│   ├── nlp_routes.py           # Routes NLP/FAISS
+│   └── reranking_routes.py     # Routes re-ranking
+│
+├── controllers/         # Logique de contrôle HTTP
+│   ├── workflow_controller.py
+│   ├── crawler_controller.py
+│   └── ...
+│
+├── services/            # Logique métier
+│   ├── workflow_service.py     # Orchestration globale
+│   ├── crawler_service.py      # Crawling multi-sources
+│   ├── nlp_service.py          # FAISS + embeddings
+│   ├── reranking_service.py    # Cross-encoder
+│   └── user_query_service.py   # Gestion requêtes
+│
+└── models/              # Modèles Pydantic
+    ├── workflow_model.py
+    ├── crawler_model.py
+    └── ...
+```
+
+---
+
+## 🔄 Workflow Global
+
+### Vue d'Ensemble
+
+Le **workflow global** est le cœur de l'application. Il orchestre 6 étapes pour transformer une question en liste de ressources classées.
+
+```
+┌────────────────────────────────────────────────────────┐
+│  Question: "Comment apprendre le machine learning ?"   │
+└────────────────────┬───────────────────────────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 1️⃣ SAUVEGARDE QUESTION  │
+        │                         │
+        │ • Stockage MongoDB      │
+        │ • Génération embedding  │
+        │ • Détection langue      │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 2️⃣ CRAWLING SOURCES     │
+        │                         │
+        │ • Wikipedia (FR/EN)     │
+        │ • GitHub Repos          │
+        │ • Medium Articles       │
+        │ • Extraction métadonnées│
+        │ • Génération embeddings │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 3️⃣ INDEX FAISS          │
+        │                         │
+        │ • Chargement embeddings │
+        │ • Construction index    │
+        │ • Sauvegarde disque     │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 4️⃣ RECHERCHE SEMANTIQUE │
+        │                         │
+        │ • Embedding question    │
+        │ • Similarité cosine     │
+        │ • Top 50 résultats      │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 5️⃣ RE-RANKING           │
+        │                         │
+        │ • Cross-Encoder BERT    │
+        │ • Évaluation fine       │
+        │ • Top 10 finaux         │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │ 6️⃣ SAUVEGARDE INFERENCES│
+        │                         │
+        │ • Tracking recommandations │
+        │ • Prêt pour feedbacks   │
+        │ • Métriques performance │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │   TOP 10 RESSOURCES     │
+        │                         │
+        │ • Titre, URL, Auteur    │
+        │ • Scores détaillés      │
+        │ • Mots-clés, Source     │
+        │ • ID inférence          │
+        └─────────────────────────┘
+```
+
+### Utilisation du Workflow
+
+**Requête minimale :**
+```bash
 curl -X POST "http://localhost:8000/api/workflow/process" \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "Comment apprendre le machine learning ?"
+    "question": "Comment apprendre Python ?"
   }'
 ```
 
-**Étapes automatiques :**
-1. 📝 Sauvegarde de la question avec embedding
-2. 🕷️ Crawling des sources (Wikipedia, GitHub, Medium)
-3. 🔄 Reconstruction de l'index FAISS
-4. 🔍 Recherche sémantique (top 50)
-5. 🎯 Re-ranking avec cross-encoder (top 10)
-6. 💾 Sauvegarde des inférences
+**Requête complète avec paramètres :**
+```bash
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Deep learning tutorial",
+    "max_par_site": 20,
+    "sources": ["wikipedia", "github", "medium"],
+    "langues": ["fr", "en"],
+    "top_k_faiss": 50,
+    "top_k_final": 10
+  }'
+```
 
-**Résultat :** Top 10 des meilleures ressources avec scores détaillés !
+**Exemple Python :**
+```python
+import requests
 
-➡️ **[Voir le guide complet du workflow](docs/WORKFLOW_GUIDE.md)**
+response = requests.post(
+    "http://localhost:8000/api/workflow/process",
+    json={"question": "Comment utiliser TensorFlow ?"}
+)
 
-## 📁 Structure du projet
+data = response.json()
+print(f"✅ {data['total_resultats_final']} résultats en {data['duree_totale_secondes']}s")
+
+for i, r in enumerate(data['resultats'], 1):
+    print(f"{i}. {r['titre']} (score: {r['score_final']:.2f})")
+    print(f"   {r['url']}")
+```
+
+### Format de Réponse
+
+```json
+{
+  "question": "Comment apprendre le machine learning ?",
+  "id_requete": "507f1f77bcf86cd799439011",
+  "total_crawle": 45,
+  "total_resultats_faiss": 50,
+  "total_resultats_final": 10,
+  "duree_crawl_secondes": 12.5,
+  "duree_recherche_secondes": 0.3,
+  "duree_reranking_secondes": 1.2,
+  "duree_totale_secondes": 14.0,
+  "resultats": [
+    {
+      "titre": "Introduction au Machine Learning",
+      "url": "https://fr.wikipedia.org/wiki/Machine_learning",
+      "auteur": "Wikipedia Contributors",
+      "date": "2024-01-15",
+      "score_faiss": 0.85,
+      "score_reranking": 0.92,
+      "score_final": 0.89,
+      "mots_cles": ["machine learning", "IA", "apprentissage"],
+      "source": "wikipedia",
+      "id_inference": "507f1f77bcf86cd799439012"
+    }
+    // ... 9 autres ressources
+  ],
+  "sources_crawlees": ["wikipedia", "github", "medium"],
+  "erreurs": []
+}
+```
+
+➡️ **[Documentation complète du workflow](docs/WORKFLOW_GUIDE.md)**
+
+---
+
+## 📁 Structure du Projet
 
 ```
 crawler-enduranker-api/
-├── public/                    # Fichiers statiques
-├── src/
-│   ├── crawler/              # Système de crawling Scrapy
-│   │   ├── spiders/          # Spiders Wikipedia, GitHub, Medium
-│   │   └── utils/            # Utilitaires de crawling
-│   ├── controllers/          # Logique de contrôle
-│   ├── models/               # Modèles Pydantic
-│   ├── routes/               # Routes API
-│   ├── services/             # Logique métier
-│   └── database.py           # Configuration MongoDB
-├── venv/                     # Environnement virtuel
-├── main.py                   # Point d'entrée
-├── scrapy.cfg               # Configuration Scrapy
-├── requirements.txt         # Dépendances
-└── .env                     # Variables d'environnement
+├── 📄 main.py                          # Point d'entrée de l'application
+├── 📄 requirements.txt                 # Dépendances Python
+├── 📄 docker-compose.yml               # Configuration Docker (MongoDB)
+├── 📄 .env                            # Variables d'environnement
+│
+├── 📁 src/                            # Code source principal
+│   ├── database.py                    # Configuration MongoDB
+│   ├── utils.py                       # Utilitaires communs
+│   │
+│   ├── 📁 routes/                     # Endpoints API (FastAPI)
+│   │   ├── workflow_routes.py         # 🔥 Route principale du workflow
+│   │   ├── crawler_routes.py          # Routes de crawling
+│   │   ├── nlp_routes.py              # Routes NLP/FAISS
+│   │   ├── reranking_routes.py        # Routes re-ranking
+│   │   └── user_query_routes.py       # Routes requêtes utilisateur
+│   │
+│   ├── 📁 controllers/                # Contrôleurs HTTP
+│   │   ├── workflow_controller.py     # Contrôleur workflow
+│   │   ├── crawler_controller.py      # Contrôleur crawler
+│   │   ├── reranking_controller.py    # Contrôleur re-ranking
+│   │   └── user_query_controller.py   # Contrôleur requêtes
+│   │
+│   ├── 📁 services/                   # Logique métier
+│   │   ├── workflow_service.py        # 🎯 Orchestration workflow (6 étapes)
+│   │   ├── crawler_service.py         # Crawling multi-sources
+│   │   ├── nlp_service.py             # FAISS + Embeddings
+│   │   ├── reranking_service.py       # Cross-Encoder + Fine-tuning
+│   │   └── user_query_service.py      # Gestion requêtes utilisateur
+│   │
+│   └── 📁 models/                     # Modèles Pydantic (validation)
+│       ├── workflow_model.py          # Modèles du workflow
+│       ├── crawler_model.py           # Modèles de crawling
+│       ├── reranking_model.py         # Modèles de re-ranking
+│       └── user_query_model.py        # Modèles de requêtes
+│
+├── 📁 data/                           # Données persistantes
+│   ├── faiss_index.index              # Index FAISS
+│   └── faiss_index.ids                # IDs des ressources
+│
+├── 📁 models/                         # Modèles ML
+│   └── cross_encoder_finetuned/       # Modèle BERT fine-tuné
+│       ├── pytorch_model.bin          # Poids du modèle
+│       ├── config.json                # Configuration
+│       └── training_metadata.pkl      # Métadonnées d'entraînement
+│
+├── 📁 docs/                           # Documentation
+│   ├── WORKFLOW_GUIDE.md              # 📖 Guide complet du workflow
+│   ├── NLP_SERVICE.md                 # Documentation NLP/FAISS
+│   └── RERANKING_SERVICE.md           # Documentation Re-ranking
+│
+├── 📁 notebooks/                      # Jupyter Notebooks
+│   ├── fine_tune_cross_encoder.ipynb  # Fine-tuning du modèle
+│   └── FINE_TUNING_GUIDE.md           # Guide de fine-tuning
+│
+├── 📁 public/                         # Fichiers statiques
+│   └── index.html                     # Page d'accueil
+│
+└── 📁 scripts/                        # Scripts utilitaires
+    ├── test_workflow.py               # Tests du workflow
+    └── examples_workflow.sh           # Exemples curl
 ```
 
-## Installation
+---
 
-1. Créer et activer l'environnement virtuel :
+## 🚀 Installation
+
+### Prérequis
+
+- **Python 3.10+**
+- **MongoDB 6.0+** (ou Docker)
+- **8 GB RAM minimum** (16 GB recommandé pour le fine-tuning)
+- **Connexion Internet** (pour le crawling)
+
+### Installation Rapide
+
+#### Option 1 : Avec Docker (Recommandé)
+
 ```bash
+# 1. Cloner le repository
+git clone <votre-repo-url>
+cd crawler-enduranker-api
+
+# 2. Démarrer MongoDB avec Docker
+docker-compose up -d
+
+# 3. Créer l'environnement virtuel
 python3 -m venv venv
-source venv/bin/activate  # Sur Linux/Mac
-# ou
-venv\Scripts\activate  # Sur Windows
-```
+source venv/bin/activate  # Linux/Mac
+# ou venv\Scripts\activate  # Windows
 
-2. Installer les dépendances :
-```bash
+# 4. Installer les dépendances
 pip install -r requirements.txt
-```
 
-3. Configurer les variables d'environnement :
-```bash
+# 5. Configurer les variables d'environnement
 cp .env.example .env
-# Puis éditer le fichier .env selon votre configuration
+# Éditer .env si nécessaire
+
+# 6. Démarrer l'API
+python main.py
 ```
 
-## Configuration de MongoDB
-
-Assurez-vous que MongoDB est installé et en cours d'exécution localement :
+#### Option 2 : MongoDB Local
 
 ```bash
-# Vérifier si MongoDB est en cours d'exécution
+# 1-3. Même chose que l'option 1
+
+# 4. Vérifier que MongoDB est en cours d'exécution
 sudo systemctl status mongod
+sudo systemctl start mongod  # Si nécessaire
 
-# Démarrer MongoDB si nécessaire
-sudo systemctl start mongod
-
-# Activer MongoDB au démarrage
-sudo systemctl enable mongod
+# 5-6. Installer dépendances et démarrer
+pip install -r requirements.txt
+python main.py
 ```
 
-Par défaut, l'application se connecte à `mongodb://localhost:27017` avec la base de données `eduranker_db`.
-Vous pouvez modifier ces valeurs dans le fichier `.env` :
+### Configuration
 
-```env
+#### Variables d'Environnement (.env)
+
+```bash
+# Application
+APP_NAME=EduRanker Crawler API
+APP_VERSION=1.0.0
+DEBUG=True
+HOST=0.0.0.0
+PORT=8000
+
+# MongoDB
 MONGODB_URL=mongodb://localhost:27017
 MONGODB_DB_NAME=eduranker_db
+
+# FAISS
+FAISS_INDEX_PATH=data/faiss_index
+
+# Logging
+LOG_LEVEL=INFO
 ```
 
-## Lancement
+### Vérification de l'Installation
 
 ```bash
-python main.py
-# ou
-uvicorn main:app --reload
+# 1. Vérifier que l'API fonctionne
+curl http://localhost:8000/health
+
+# 2. Accéder à la documentation
+# Ouvrir http://localhost:8000/docs dans votre navigateur
+
+# 3. Tester le workflow
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Comment apprendre Python ?"}'
 ```
 
-L'API sera accessible sur `http://localhost:8000`
+---
 
-La documentation interactive sera disponible sur :
-- Swagger UI : `http://localhost:8000/docs`
-- ReDoc : `http://localhost:8000/redoc`
+## 💻 Utilisation
 
-## 🚀 Utilisation de l'API Crawler
+### Démarrage Rapide
 
-### Collecter des ressources éducatives
+```bash
+# Terminal 1 : Démarrer MongoDB (si Docker)
+docker-compose up -d
 
-La route principale vous permet d'envoyer une question et de recevoir une liste d'articles/ressources :
+# Terminal 2 : Démarrer l'API
+python main.py
+
+# Terminal 3 : Tester le workflow
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Comment apprendre Python ?"}'
+```
+
+### Exemples d'Utilisation
+
+#### 1. Workflow Global (Recommandé)
+
+```python
+import requests
+
+# Obtenir le top 10 pour une question
+response = requests.post(
+    "http://localhost:8000/api/workflow/process",
+    json={
+        "question": "Comment débuter en data science ?",
+        "sources": ["wikipedia", "github"],
+        "top_k_final": 10
+    }
+)
+
+results = response.json()
+print(f"✅ {results['total_resultats_final']} ressources trouvées")
+
+for i, resource in enumerate(results['resultats'], 1):
+    print(f"\n{i}. {resource['titre']}")
+    print(f"   Score: {resource['score_final']:.3f}")
+    print(f"   URL: {resource['url']}")
+    print(f"   Source: {resource['source']}")
+```
+
+#### 2. Crawling Seul
 
 ```bash
 curl -X POST "http://localhost:8000/api/crawler/collect" \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "machine learning en éducation"
+    "question": "TensorFlow tutorial",
+    "max_par_site": 15,
+    "sources": ["github", "medium"],
+    "langues": ["en"]
   }'
 ```
 
-**Avec paramètres personnalisés :**
+#### 3. Recherche Sémantique
 
 ```bash
-curl -X POST "http://localhost:8000/api/crawler/collect" \
+curl -X POST "http://localhost:8000/api/nlp/search" \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "deep learning",
+    "question": "natural language processing",
+    "top_k": 20
+  }'
+```
+
+#### 4. Feedback sur une Recommandation
+
+```bash
+curl -X POST "http://localhost:8000/api/reranking/feedback" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "inference_id": "507f1f77bcf86cd799439011",
+    "feedback_type": "positive"
+  }'
+```
+
+---
+
+## 📚 API Endpoints
+
+### Workflow Global
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/workflow/process` | POST | 🔥 **Workflow complet** : crawling → recherche → re-ranking |
+| `/api/workflow/health` | GET | Health check du workflow |
+
+### Crawler
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/crawler/collect` | POST | Collecter des ressources depuis les sources |
+| `/api/crawler/search` | POST | Rechercher dans les ressources collectées |
+| `/api/crawler/stats` | GET | Statistiques du crawler |
+
+### NLP & FAISS
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/nlp/search` | POST | Recherche sémantique avec FAISS |
+| `/api/nlp/index/rebuild` | POST | Reconstruire l'index FAISS |
+| `/api/nlp/stats` | GET | Statistiques de l'index |
+| `/api/nlp/index/add` | POST | Ajouter des ressources à l'index |
+
+### Re-ranking
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/reranking/search-with-reranking` | POST | Recherche + re-ranking automatique |
+| `/api/reranking/rerank` | POST | Re-ranker des résultats existants |
+| `/api/reranking/feedback` | POST | Soumettre un feedback utilisateur |
+| `/api/reranking/fine-tune` | POST | Lancer le fine-tuning du modèle |
+| `/api/reranking/inferences/{query_id}` | GET | Récupérer les inférences |
+
+### Requêtes Utilisateur
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/queries/save` | POST | Sauvegarder une question utilisateur |
+| `/api/queries/recent` | GET | Récupérer les requêtes récentes |
+| `/api/queries/stats` | GET | Statistiques des requêtes |
+
+### Documentation
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8000` | Page d'accueil |
+| `http://localhost:8000/docs` | 📖 Documentation Swagger UI (interactive) |
+| `http://localhost:8000/redoc` | Documentation ReDoc |
+| `http://localhost:8000/health` | Health check API |
+
+---
+
+## 🛠️ Technologies
+
+### Backend & API
+
+- **[FastAPI](https://fastapi.tiangolo.com/)** - Framework web moderne et performant
+- **[Pydantic](https://docs.pydantic.dev/)** - Validation des données
+- **[Uvicorn](https://www.uvicorn.org/)** - Serveur ASGI
+
+### Base de Données
+
+- **[MongoDB](https://www.mongodb.com/)** - Base NoSQL pour stockage flexible
+- **[Motor](https://motor.readthedocs.io/)** - Driver MongoDB asynchrone
+- **[PyMongo](https://pymongo.readthedocs.io/)** - Driver MongoDB
+
+### Machine Learning & NLP
+
+- **[Sentence-Transformers](https://www.sbert.net/)** - Embeddings sémantiques
+  - Modèle: `all-MiniLM-L6-v2` (384 dimensions)
+- **[FAISS](https://github.com/facebookresearch/faiss)** - Recherche vectorielle ultra-rapide
+- **[Transformers](https://huggingface.co/transformers/)** (HuggingFace) - Cross-Encoder
+  - Modèle: `ms-marco-MiniLM-L-6-v2`
+- **[PyTorch](https://pytorch.org/)** - Framework deep learning
+
+### Crawling & Web Scraping
+
+- **[Requests](https://requests.readthedocs.io/)** - Requêtes HTTP
+- **[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)** - Parsing HTML
+- **Wikipedia API** - Accès aux articles Wikipedia
+- **GitHub API** - Accès aux repositories
+
+### Utilitaires
+
+- **[Python-dotenv](https://github.com/theskumar/python-dotenv)** - Variables d'environnement
+- **NumPy** - Calculs numériques
+- **Pandas** - Analyse de données
+
+---
+
+## 📖 Documentation
+
+### Guides Complets
+
+| Document | Description | Temps de Lecture |
+|----------|-------------|------------------|
+| **[WORKFLOW_GUIDE.md](docs/WORKFLOW_GUIDE.md)** | 📖 Guide complet du workflow global | 30 min |
+| **[NLP_SERVICE.md](docs/NLP_SERVICE.md)** | Documentation NLP et FAISS | 20 min |
+| **[RERANKING_SERVICE.md](docs/RERANKING_SERVICE.md)** | Documentation Re-ranking | 20 min |
+| **[FINE_TUNING_GUIDE.md](notebooks/FINE_TUNING_GUIDE.md)** | Guide de fine-tuning du modèle | 45 min |
+
+### Quick Start
+
+| Document | Description | Temps |
+|----------|-------------|-------|
+| **[QUICKSTART_WORKFLOW.md](QUICKSTART_WORKFLOW.md)** | Démarrage rapide workflow | 5 min |
+| **[INSTALLATION_COMPLETE.md](INSTALLATION_COMPLETE.md)** | Installation complète | 10 min |
+| **[SUMMARY.md](SUMMARY.md)** | Résumé du projet | 10 min |
+
+### Fichiers Techniques
+
+- `BUGFIX_INFERENCE.md` - Corrections de bugs
+- `WORKFLOW_IMPLEMENTATION.md` - Détails d'implémentation
+- `COMMANDES_ESSENTIELLES.sh` - Commandes utiles
+
+---
+
+## 🧪 Tests
+
+### Tests Automatisés
+
+```bash
+# Test complet du workflow
+python test_workflow.py
+
+# Exemples variés (5 cas d'usage)
+./examples_workflow.sh
+
+# Commandes essentielles
+./COMMANDES_ESSENTIELLES.sh
+```
+
+### Tests Manuels
+
+```bash
+# 1. Health Check
+curl http://localhost:8000/health
+curl http://localhost:8000/api/workflow/health
+
+# 2. Test workflow simple
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Python tutorial"}'
+
+# 3. Test avec paramètres
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Deep learning for beginners",
     "max_par_site": 10,
-    "sources": ["wikipedia", "github"],
-    "langues": ["fr", "en"]
+    "sources": ["wikipedia"],
+    "langues": ["en"],
+    "top_k_final": 5
   }'
 ```
 
-### Rechercher dans les ressources existantes
+### Vérification MongoDB
 
 ```bash
-curl -X POST "http://localhost:8000/api/crawler/search" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "machine learning",
-    "limite": 20
-  }'
-```
+# Se connecter à MongoDB
+docker exec -it mongodb mongo eduranker_db
+# ou
+mongosh eduranker_db
 
-### Scripts de test
-
-Pour tester rapidement l'API :
-
-```bash
-# Test de l'API CRUD de base
-./test_api.sh
-
-# Test de l'API Crawler
-./test_crawler_api.sh
-```
-
-## Test de la connexion MongoDB
-
-Pour vérifier que MongoDB fonctionne correctement :
-
-```bash
-# Test de connexion MongoDB
-mongosh
-
-# Dans le shell MongoDB
-show dbs
-use eduranker_db
+# Commandes MongoDB
 show collections
+db.ressources_educatives.count()
+db.users_queries.find().sort({date_creation:-1}).limit(5).pretty()
+db.inference.find().sort({date_inference:-1}).limit(5).pretty()
 ```
 
-## 🆕 Système d'Inférence et Feedback
+---
 
-Le système de **tracking d'inférence** et de **feedback simplifié** est maintenant opérationnel ! 🎉
+## ⚡ Performances
 
-### Démarrage Rapide (3 étapes)
+### Temps d'Exécution
 
-```bash
-# 1. Créer les index MongoDB (une seule fois)
-python scripts/create_inference_indexes.py
+| Étape | Durée Typique | Notes |
+|-------|---------------|-------|
+| Sauvegarde question | < 0.1s | Quasi instantané |
+| Crawling | 10-30s | Dépend des sources et du réseau |
+| Index FAISS | 1-5s | Dépend du nombre de ressources |
+| Recherche FAISS | 0.1-0.5s | Ultra-rapide (même 100k+ vecteurs) |
+| Re-ranking | 1-3s | Dépend du top_k |
+| Sauvegarde inférences | < 0.5s | Asynchrone |
+| **TOTAL** | **12-40s** | Acceptable pour un workflow complet |
 
-# 2. Démarrer l'API
-python main.py
+### Optimisations
 
-# 3. Tester le système (dans un autre terminal)
-python scripts/test_inference_flow.py
-```
-
-### Fonctionnalités Clés
-
-- ✅ **Tracking automatique** : Toutes les recommandations sont sauvegardées
-- ✅ **Feedback simplifié** : Seulement 2 champs (`inference_id` + `feedback_type`)
-- ✅ **Analyse de performance** : Scripts d'analyse des données
-- ✅ **Fine-tuning** : Préparation pour amélioration du modèle
-
-### Endpoints Disponibles
-
-```bash
-# Recherche avec reranking (sauvegarde automatique des inférences)
-POST /api/reranking/search-with-reranking
+#### Pour la Vitesse
+```json
 {
-  "query_text": "machine learning tutorial",
-  "session_id": "user_123"  // Optionnel
+  "max_par_site": 10,
+  "sources": ["wikipedia"],
+  "top_k_faiss": 30,
+  "top_k_final": 5
 }
+```
 
-# Soumission de feedback (ULTRA-SIMPLIFIÉ)
-POST /api/reranking/feedback
+#### Pour la Précision
+```json
 {
-  "inference_id": "67567xyz...",  // De la réponse de recherche
-  "feedback_type": "like"          // "like" | "dislike" | "click" | "view"
-}
-
-# Récupération des inférences
-GET /api/reranking/inferences/{query_id}
-```
-
-### Tests Disponibles
-
-```bash
-# Test complet (recherche + feedbacks multiples + vérification)
-python scripts/test_inference_flow.py
-
-# Test rapide (1 recherche + 1 feedback)
-python scripts/test_inference_flow.py --quick
-
-# Test bash (si jq installé)
-./scripts/test_quick.sh
-
-# Analyser les données collectées
-python scripts/analyze_inferences.py
-```
-
-### Documentation Complète
-
-| Document | Description |
-|----------|-------------|
-| **`QUICK_START.md`** | 🚀 Guide de démarrage en 5 minutes |
-| **`docs/TESTING_INFERENCE_FEEDBACK.md`** | 🧪 Guide de test complet |
-| **`docs/FEEDBACK_SIMPLIFIE.md`** | 🎨 Intégration frontend |
-| **`docs/INFERENCE_TRACKING.md`** | 👨‍💻 Documentation technique |
-| **`scripts/README.md`** | 🔧 Utilisation des scripts |
-| **`IMPLEMENTATION_COMPLETE.md`** | 📊 Vue d'ensemble système |
-| **`FILES_SUMMARY.txt`** | 📦 Résumé des fichiers |
-
-### Exemple d'Intégration Frontend
-
-```javascript
-// 1. Recherche
-const response = await fetch('/api/reranking/search-with-reranking', {
-  method: 'POST',
-  body: JSON.stringify({ query_text: userQuery, session_id: sessionId })
-});
-const { results } = await response.json();
-
-// 2. Afficher les résultats et ajouter handlers
-results.forEach(result => {
-  // Stocker l'inference_id pour chaque résultat
-  const inferenceId = result.inference_id;
-  
-  // Sur like/dislike
-  likeButton.onclick = () => submitFeedback(inferenceId, 'like');
-  
-  // Sur clic de la ressource
-  resourceLink.onclick = () => submitFeedback(inferenceId, 'click');
-});
-
-// 3. Fonction de soumission
-async function submitFeedback(inferenceId, feedbackType) {
-  await fetch('/api/reranking/feedback', {
-    method: 'POST',
-    body: JSON.stringify({ inference_id: inferenceId, feedback_type: feedbackType })
-  });
+  "max_par_site": 25,
+  "sources": ["wikipedia", "github", "medium"],
+  "top_k_faiss": 100,
+  "top_k_final": 15
 }
 ```
 
-### Base de Données MongoDB
+### Capacité
 
-**Collection `inference`** : Stocke toutes les recommandations
+- **MongoDB** : Illimité (disque)
+- **FAISS Index** : Jusqu'à 1M+ de vecteurs (16GB RAM)
+- **Concurrent requests** : 100+ (avec Uvicorn workers)
+
+---
+
+## 💾 Base de Données MongoDB
+
+### Collections
+
+#### 1. `ressources_educatives`
+Stocke toutes les ressources crawlées avec leurs embeddings.
+
 ```javascript
 {
   "_id": ObjectId("..."),
-  "user_query_id": "...",     // ID de la requête
-  "resource_id": "...",        // ID de la ressource recommandée
-  "faiss_score": 0.85,         // Score FAISS
-  "reranking_score": 0.92,     // Score cross-encoder
-  "final_score": 0.88,         // Score final
-  "rank": 1,                   // Position (1-N)
-  "feedback": "like",          // Feedback utilisateur
-  "date_inference": ISODate,   // Date de recommandation
-  "date_feedback": ISODate,    // Date du feedback
-  "session_id": "..."          // Session utilisateur
+  "titre": "Introduction au Machine Learning",
+  "url": "https://...",
+  "source": "wikipedia",
+  "langue": "fr",
+  "auteur": "Wikipedia Contributors",
+  "date": "2024-01-15",
+  "texte": "Le machine learning est...",
+  "embedding": [0.1, -0.2, ...],  // 384 dimensions
+  "popularite": 150,
+  "type_ressource": "article",
+  "mots_cles": ["ML", "IA"],
+  "requete_originale": "machine learning",
+  "date_collecte": ISODate("2024-01-20")
 }
 ```
 
-**5 index créés** pour optimiser les performances :
-- `user_query_id` - Récupération rapide
-- `resource_id` - Analyse par ressource
-- `feedback` - Statistiques
-- `session_id` - Suivi utilisateur
-- `date_inference` - Tri chronologique
+#### 2. `users_queries`
+Stocke les questions des utilisateurs.
 
-### Prochaines Étapes
+```javascript
+{
+  "_id": ObjectId("..."),
+  "question": "Comment apprendre Python ?",
+  "embedding": [0.15, -0.23, ...],  // 384 dimensions
+  "langue_detectee": "fr",
+  "date_creation": ISODate("2024-01-20")
+}
+```
 
-1. **Collecter des données** : Laisser le système tourner et collecter des feedbacks
-2. **Analyser** : `python scripts/analyze_inferences.py`
-3. **Fine-tuner** : `POST /api/reranking/fine-tune?num_epochs=3`
-4. **Optimiser** : Ajuster le modèle en fonction des résultats
+#### 3. `inference`
+Trackingdes recommandations et feedbacks.
+
+```javascript
+{
+  "_id": ObjectId("..."),
+  "user_query_id": "507f...",
+  "resource_id": "507f...",
+  "faiss_score": 0.85,
+  "reranking_score": 0.92,
+  "final_score": 0.89,
+  "rank": 1,
+  "feedback": "positive",  // ou null
+  "date_inference": ISODate("2024-01-20"),
+  "date_feedback": ISODate("2024-01-20"),
+  "session_id": "user_123"
+}
+```
+
+### Index MongoDB
+
+Des index sont créés automatiquement pour optimiser les performances :
+
+- `ressources_educatives` : `source`, `langue`, `requete_originale`
+- `users_queries` : `date_creation`
+- `inference` : `user_query_id`, `resource_id`, `feedback`, `session_id`, `date_inference`
+
+---
+
+## 🎯 Système d'Inférence et Feedback
+
+### Fonctionnement
+
+1. **Tracking Automatique** : Chaque recommandation est sauvegardée dans `inference`
+2. **Feedback Utilisateur** : Les utilisateurs peuvent donner leur avis (positive/negative/click/view)
+3. **Analyse** : Les données sont analysées pour comprendre les performances
+4. **Fine-tuning** : Le modèle est amélioré avec les feedbacks positifs/négatifs
+
+### Workflow Feedback
+
+```
+Recherche → Résultats avec inference_id → Utilisateur interagit → Feedback
+                                                                      ↓
+                                             MongoDB (inference collection)
+                                                                      ↓
+                                                Fine-tuning Périodique
+                                                                      ↓
+                                                  Modèle Amélioré
+```
+
+### Exemple Intégration Frontend
+
+```javascript
+// 1. Workflow complet
+const response = await fetch('/api/workflow/process', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    question: userInput,
+    top_k_final: 10
+  })
+});
+
+const data = await response.json();
+
+// 2. Afficher résultats avec handlers de feedback
+data.resultats.forEach(resource => {
+  const card = createResourceCard(resource);
+  
+  // Bouton Like
+  card.querySelector('.like-btn').onclick = async () => {
+    await fetch('/api/reranking/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        inference_id: resource.id_inference,
+        feedback_type: 'positive'
+      })
+    });
+    showToast('Merci pour votre feedback !');
+  };
+  
+  // Tracking des clics
+  card.querySelector('.resource-link').onclick = async () => {
+    await fetch('/api/reranking/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        inference_id: resource.id_inference,
+        feedback_type: 'click'
+      })
+    });
+  };
+});
+```
+
+---
+
+## 🔧 Fine-Tuning du Modèle
+
+### Processus
+
+1. **Collecter des feedbacks** (minimum 50-100)
+2. **Lancer le fine-tuning** via API ou notebook
+3. **Évaluer le nouveau modèle**
+4. **Déployer en production**
+
+### Via API
+
+```bash
+curl -X POST "http://localhost:8000/api/reranking/fine-tune?num_epochs=3" \
+  -H "Content-Type: application/json"
+```
+
+### Via Notebook
+
+```bash
+jupyter notebook notebooks/fine_tune_cross_encoder.ipynb
+```
+
+Le notebook guide à travers :
+- Chargement des données de feedback
+- Préparation des paires (query, resource, label)
+- Configuration du fine-tuning
+- Entraînement du modèle
+- Évaluation des performances
+- Sauvegarde du modèle
+
+### Métriques
+
+Le système génère automatiquement :
+- **Accuracy** : Précision globale
+- **Precision/Recall** : Par classe (positive/negative)
+- **F1-Score** : Mesure harmonique
+- **Confusion Matrix** : Visualisation des erreurs
+- **Courbe ROC** : Performance du classifieur
+
+---
+
+## 🚧 Déploiement
+
+### Production
+
+#### Option 1 : Docker (Recommandé)
+
+```dockerfile
+# Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python", "main.py"]
+```
+
+```bash
+# Build et run
+docker build -t eduranker-api .
+docker run -p 8000:8000 --env-file .env eduranker-api
+```
+
+#### Option 2 : Serveur Linux
+
+```bash
+# Installer les dépendances système
+sudo apt-get update
+sudo apt-get install python3.10 python3-pip mongodb
+
+# Déployer l'application
+git clone <repo>
+cd crawler-enduranker-api
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Utiliser systemd pour le démarrage automatique
+sudo systemctl enable eduranker-api
+sudo systemctl start eduranker-api
+```
+
+### Configuration Production
+
+```env
+# .env.production
+DEBUG=False
+LOG_LEVEL=WARNING
+HOST=0.0.0.0
+PORT=8000
+
+# Utiliser MongoDB Atlas ou serveur dédié
+MONGODB_URL=mongodb://username:password@host:27017
+
+# CORS spécifique
+ALLOWED_ORIGINS=https://votre-frontend.com
+```
+
+---
+
+## 🤝 Contributing
+
+### Comment Contribuer
+
+1. **Fork** le projet
+2. **Créer une branche** : `git checkout -b feature/AmazingFeature`
+3. **Commit** : `git commit -m 'Add AmazingFeature'`
+4. **Push** : `git push origin feature/AmazingFeature`
+5. **Pull Request**
+
+### Standards de Code
+
+- **PEP 8** : Style guide Python
+- **Type hints** : Utiliser les annotations de types
+- **Docstrings** : Documenter les fonctions
+- **Tests** : Ajouter des tests pour les nouvelles features
+
+---
+
+## 📝 Roadmap
+
+### Version 1.0 (Actuelle) ✅
+- [x] Workflow global complet
+- [x] Crawler multi-sources
+- [x] Recherche FAISS
+- [x] Re-ranking cross-encoder
+- [x] Système d'inférence
+- [x] Fine-tuning
+
+### Version 1.1 (En Cours) 🚧
+- [ ] Cache Redis pour performances
+- [ ] Pagination des résultats
+- [ ] Filtres avancés (date, source, langue)
+- [ ] API rate limiting
+- [ ] Webhooks pour notifications
+
+### Version 2.0 (Futur) 🔮
+- [ ] Support de nouvelles sources (Stack Overflow, arXiv, Coursera)
+- [ ] Recommandations personnalisées par utilisateur
+- [ ] Multi-modal (images, vidéos)
+- [ ] GraphQL API
+- [ ] Dashboard d'administration
+
+---
+
+## ❓ FAQ
+
+### Q: Combien de temps prend le workflow ?
+**R:** Entre 12 et 40 secondes selon les paramètres et la connexion internet.
+
+### Q: Combien de ressources puis-je stocker ?
+**R:** Illimité dans MongoDB. L'index FAISS peut gérer 1M+ de vecteurs avec 16GB RAM.
+
+### Q: Le modèle s'améliore-t-il automatiquement ?
+**R:** Non, le fine-tuning doit être lancé manuellement après collecte de feedbacks.
+
+### Q: Puis-je ajouter mes propres sources ?
+**R:** Oui, en créant un nouveau spider dans `src/services/crawler_service.py`.
+
+### Q: Les embeddings sont-ils générés automatiquement ?
+**R:** Oui, automatiquement lors du crawling avec sentence-transformers.
+
+### Q: Puis-je utiliser un autre modèle de re-ranking ?
+**R:** Oui, modifier `RERANKING_MODEL` dans le service de re-ranking.
+
+### Q: Comment sauvegarder l'index FAISS ?
+**R:** L'index est sauvegardé automatiquement dans `data/faiss_index`.
+
+### Q: L'API est-elle prête pour la production ?
+**R:** Oui, avec quelques ajustements (CORS, rate limiting, monitoring).
+
+---
+
+## 📄 Licence
+
+Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+---
+
+## 👥 Auteurs
+
+- **Équipe EduRanker** - Projet Master 2 Data Science
+- **Cours** : INF5101 Traitement multimédia des données
+- **Année** : 2024-2025
+
+---
+
+## 🙏 Remerciements
+
+- **FastAPI** pour le framework web excellent
+- **HuggingFace** pour les modèles pré-entraînés
+- **Facebook AI** pour FAISS
+- **MongoDB** pour la base de données
+- **Communauté Open Source** pour tous les outils utilisés
+
+---
+
+## 📞 Support
+
+### Documentation
+- 📖 **Guides complets** : Dossier `/docs`
+- 🌐 **API Docs** : http://localhost:8000/docs
+- 📚 **Notebooks** : Dossier `/notebooks`
+
+### Contact
+- 📧 **Email** : eduranker@example.com
+- 💬 **Issues** : [GitHub Issues](https://github.com/votre-repo/issues)
+- 📝 **Wiki** : [GitHub Wiki](https://github.com/votre-repo/wiki)
+
+### Liens Utiles
+- 🔗 **Repository** : https://github.com/votre-repo
+- 📊 **Documentation complète** : https://docs.eduranker.com
+- 🎓 **Tutoriels** : https://tutorials.eduranker.com
+
+---
+
+<div align="center">
+
+**⭐ Si ce projet vous aide, n'hésitez pas à mettre une étoile ! ⭐**
+
+Made with ❤️ by EduRanker Team
+
+</div>

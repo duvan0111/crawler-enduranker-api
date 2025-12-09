@@ -385,6 +385,31 @@ class NLPService:
             logger.error(f"❌ Erreur récupération ressources: {e}")
             return []
     
+    async def rechercher_ressources_similaires(
+        self,
+        question: str,
+        top_k: int = 10
+    ) -> List[Dict]:
+        """
+        Alias pour recherche_et_recuperer_ressources
+        Utilisé par le workflow global
+        
+        Args:
+            question: Question de l'utilisateur
+            top_k: Nombre de résultats à retourner
+            
+        Returns:
+            Liste de dictionnaires avec les ressources et leurs scores FAISS
+        """
+        resultats = await self.recherche_et_recuperer_ressources(question, top_k)
+        
+        # Reformater les résultats pour inclure score_faiss
+        for resultat in resultats:
+            if "score_similarite" in resultat:
+                resultat["score_faiss"] = resultat.pop("score_similarite")
+        
+        return resultats
+    
     def _sauvegarder_index(self):
         """Sauvegarde l'index FAISS et les IDs sur disque"""
         try:

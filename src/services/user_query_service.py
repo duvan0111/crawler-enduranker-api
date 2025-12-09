@@ -151,6 +151,26 @@ class UserQueryServiceSimple:
             logger.error(f"❌ Erreur sauvegarde requête: {e}")
             raise
     
+    async def sauvegarder_requete_async(self, question: str) -> Dict:
+        """
+        Alias pour sauvegarder_requete, retourne un dictionnaire
+        Utilisé par le workflow global
+        
+        Args:
+            question: Question de l'utilisateur
+            
+        Returns:
+            Dictionnaire avec les informations de la requête sauvegardée
+        """
+        response = await self.sauvegarder_requete(question)
+        return {
+            "id": response.id,
+            "question": response.question,
+            "date_creation": response.date_creation,
+            "embedding_genere": response.embedding_genere,
+            "langue_detectee": response.langue_detectee
+        }
+    
     async def obtenir_requetes_recentes(self, limite: int = 50) -> List[Dict]:
         """Obtient les requêtes utilisateur récentes"""
         try:

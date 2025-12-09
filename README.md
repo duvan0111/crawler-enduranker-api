@@ -4,9 +4,10 @@ Backend FastAPI pour le projet EduRanker avec système de crawling, recherche ve
 
 ## 🎯 Fonctionnalités
 
+- **🚀 Workflow Global** : Traitement complet de bout en bout (crawling → recherche → re-ranking → top 10)
 - **API REST complète** avec FastAPI
 - **Crawler de ressources éducatives** depuis Wikipedia, GitHub, Medium
-- **Recherche vectorielle FAISS** avec embeddings de pointe
+- **Recherche vectorielle FAISS** avec embeddings de pointe (sentence-transformers)
 - **Reranking intelligent** avec cross-encoder (Sentence-BERT)
 - **Système d'inférence** : tracking automatique de toutes les recommandations
 - **Feedback simplifié** : 2 champs seulement (inference_id + feedback_type)
@@ -15,6 +16,31 @@ Backend FastAPI pour le projet EduRanker avec système de crawling, recherche ve
 - **Documentation interactive** avec Swagger UI
 - **Architecture MVC** (Models, Views, Controllers)
 - **Tests automatisés** et scripts d'analyse
+
+## 🔥 Nouveau : Workflow Global
+
+Le workflow global permet de traiter une requête utilisateur de bout en bout en **une seule requête API** :
+
+```bash
+# Exemple : Obtenir le top 10 des meilleures ressources
+curl -X POST "http://localhost:8000/api/workflow/process" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Comment apprendre le machine learning ?"
+  }'
+```
+
+**Étapes automatiques :**
+1. 📝 Sauvegarde de la question avec embedding
+2. 🕷️ Crawling des sources (Wikipedia, GitHub, Medium)
+3. 🔄 Reconstruction de l'index FAISS
+4. 🔍 Recherche sémantique (top 50)
+5. 🎯 Re-ranking avec cross-encoder (top 10)
+6. 💾 Sauvegarde des inférences
+
+**Résultat :** Top 10 des meilleures ressources avec scores détaillés !
+
+➡️ **[Voir le guide complet du workflow](docs/WORKFLOW_GUIDE.md)**
 
 ## 📁 Structure du projet
 

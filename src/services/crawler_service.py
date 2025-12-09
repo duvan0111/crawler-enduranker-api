@@ -469,6 +469,33 @@ class SimpleCrawlerService:
             logger.error(f"❌ Erreur recherche: {e}")
             return []
     
+    async def rechercher_ressources_async(
+        self,
+        requete: str,
+        max_par_site: int = 15,
+        sources: Optional[List[str]] = None,
+        langues: Optional[List[str]] = None
+    ) -> Dict:
+        """
+        Méthode asynchrone pour collecter des ressources (alias pour collecter_ressources)
+        Utilisée par le workflow global
+        
+        Args:
+            requete: Question ou terme de recherche
+            max_par_site: Nombre maximum de résultats par site
+            sources: Sources à utiliser
+            langues: Langues pour Wikipedia
+            
+        Returns:
+            Dictionnaire avec les résultats de la collecte
+        """
+        return await self.collecter_ressources(
+            question=requete,
+            max_par_site=max_par_site,
+            sources=sources,
+            langues=langues
+        )
+    
     async def obtenir_statistiques(self) -> Dict:
         """Obtient des statistiques sur les ressources collectées"""
         try:

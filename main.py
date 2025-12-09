@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import logging
 
-from src.routes import crawler_routes, user_query_routes, nlp_routes, reranking_routes
+from src.routes import crawler_routes, user_query_routes, nlp_routes, reranking_routes, workflow_routes
 from src.database import db
 from src.services.nlp_service import get_nlp_service
 
@@ -75,6 +75,7 @@ app.add_middleware(
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
 # Enregistrer les routes
+app.include_router(workflow_routes.router)  # Route principale du workflow
 app.include_router(crawler_routes.router)
 app.include_router(user_query_routes.router)
 app.include_router(nlp_routes.router)

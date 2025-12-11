@@ -35,6 +35,7 @@ class RessourceResultatModel(BaseModel):
     url: str = Field(..., description="URL de la ressource")
     auteur: Optional[str] = Field(None, description="Auteur de la ressource")
     date: Optional[str] = Field(None, description="Date de publication")
+    resume: Optional[str] = Field(None, description="Résumé ou extrait de la ressource")
     score_faiss: Optional[float] = Field(None, description="Score de similarité FAISS")
     score_reranking: Optional[float] = Field(None, description="Score du cross-encoder")
     score_final: float = Field(..., description="Score final combiné")
@@ -49,6 +50,7 @@ class RessourceResultatModel(BaseModel):
                 "url": "https://example.com/ml-intro",
                 "auteur": "John Doe",
                 "date": "2024-01-15",
+                "resume": "Le machine learning est une branche de l'intelligence artificielle...",
                 "score_faiss": 0.85,
                 "score_reranking": 0.92,
                 "score_final": 0.89,

@@ -219,6 +219,7 @@ class WorkflowService:
                         url=resultat.get("url", ""),
                         auteur=resultat.get("auteur"),
                         date=resultat.get("date"),
+                        resume=resultat.get("resume"),
                         score_faiss=score_faiss,
                         score_reranking=score_reranking,
                         score_final=score_final,

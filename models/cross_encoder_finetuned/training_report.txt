@@ -2,7 +2,7 @@
 📊 RAPPORT DE FINE-TUNING - CROSS-ENCODER EDURANKER
 ======================================================================
 
-📅 Date : 2025-12-08 17:00:52
+📅 Date : 2025-12-11 09:00:22
 
 🔧 CONFIGURATION
 ----------------------------------------------------------------------
@@ -14,12 +14,12 @@ Database             : eduranker_db
 
 📊 DONNÉES
 ----------------------------------------------------------------------
-Total échantillons   : 2
-Entraînement         : 1
+Total échantillons   : 3
+Entraînement         : 2
 Validation           : 1
 Distribution labels  :
   - Like (1.0)       : 2
-  - Dislike (0.0)    : 0
+  - Dislike (0.0)    : 1
 
 🎛️  HYPERPARAMÈTRES
 ----------------------------------------------------------------------
@@ -27,7 +27,7 @@ Epochs               : 3
 Batch size           : 16
 Learning rate        : 2e-05
 Warmup steps         : 0
-Durée totale         : 1.6s (0.0 min)
+Durée totale         : 8.0s (0.1 min)
 
 📈 PERFORMANCES
 ----------------------------------------------------------------------

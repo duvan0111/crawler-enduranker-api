@@ -14,6 +14,7 @@ from sentence_transformers import SentenceTransformer
 
 from src.models.crawler_model import RessourceEducativeModel
 from src.services.user_query_service import get_user_query_service_simple
+from src.utils import nettoyer_texte_wikipedia, normaliser_texte
 
 logger = logging.getLogger(__name__)
 
@@ -239,6 +240,7 @@ class SimpleCrawlerService:
                                 langue=langue,
                                 auteur='Wikipedia Contributors',
                                 texte=texte_contenu,
+                                resume=texte_contenu,
                                 embedding=embedding,
                                 popularite=result.get('wordcount', 0),
                                 type_ressource='article',
@@ -284,10 +286,15 @@ class SimpleCrawlerService:
             
             if 'items' in data:
                 for repo in data['items'][:max_results]:
-                    texte_description = repo.get('description', '') if repo.get('description') else ''
+                    description = repo.get('description', '') if repo.get('description') else ''
                     
-                    # Générer l'embedding du texte de description
-                    embedding = self._generer_embedding(texte_description)
+                    # Pour GitHub, la description est à la fois le texte et le résumé
+                    # On pourrait récupérer le README pour avoir plus de contenu
+                    texte_complet = description
+                    resume = description
+                    
+                    # Générer l'embedding du texte
+                    embedding = self._generer_embedding(texte_complet)
                     
                     ressource = RessourceEducativeModel(
                         titre=repo.get('full_name', ''),
@@ -296,7 +303,8 @@ class SimpleCrawlerService:
                         langue=repo.get('language', 'unknown'),
                         auteur=repo.get('owner', {}).get('login', 'unknown'),
                         date=repo.get('created_at', ''),
-                        texte=texte_description,
+                        texte=texte_complet,
+                        resume=resume,
                         embedding=embedding,
                         popularite=repo.get('stargazers_count', 0),
                         type_ressource='repository',
@@ -345,10 +353,14 @@ class SimpleCrawlerService:
             
             # Générer des ressources simulées
             for i, template in enumerate(articles_templates[:max_results]):
-                texte_description = template["description"]
+                description = template["description"]
                 
-                # Générer l'embedding du texte de description
-                embedding = self._generer_embedding(texte_description)
+                # Pour Medium simulé, la description est à la fois le texte et le résumé
+                texte_complet = description
+                resume = description
+                
+                # Générer l'embedding du texte
+                embedding = self._generer_embedding(texte_complet)
                 
                 ressource = RessourceEducativeModel(
                     titre=template["titre"],
@@ -356,7 +368,8 @@ class SimpleCrawlerService:
                     source='medium',
                     langue='en',
                     auteur=template["auteur"],
-                    texte=texte_description,
+                    texte=texte_complet,
+                    resume=resume,
                     embedding=embedding,
                     popularite=100 - (i * 10),  # Score décroissant
                     type_ressource='article',

@@ -113,7 +113,8 @@ class RerankingService:
             resultats_tries = resultats_faiss[:top_k]
             for i, res in enumerate(resultats_tries, 1):
                 res['rank'] = i
-                res['faiss_score'] = res.get('score_similarite', 0.0)
+                # Récupérer le score FAISS (peut être 'score_faiss' ou 'score_similarite')
+                res['faiss_score'] = res.get('score_faiss', res.get('score_similarite', 0.0))
                 res['reranking_score'] = None
                 res['final_score'] = res['faiss_score']
             return resultats_tries
@@ -136,7 +137,8 @@ class RerankingService:
             # Ajouter les scores aux résultats
             for i, res in enumerate(resultats_faiss):
                 res['reranking_score'] = float(scores[i])
-                res['faiss_score'] = res.get('score_similarite', 0.0)
+                # Récupérer le score FAISS (peut être 'score_faiss' ou 'score_similarite')
+                res['faiss_score'] = res.get('score_faiss', res.get('score_similarite', 0.0))
                 # Score final combiné (moyenne pondérée)
                 res['final_score'] = self._calculer_score_final(
                     res['faiss_score'], 

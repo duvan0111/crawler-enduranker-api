@@ -92,7 +92,8 @@ class RerankingController:
                 # Ajouter le rang
                 for i, res in enumerate(resultats_finaux, 1):
                     res['rank'] = i
-                    res['final_score'] = res.get('score_similarite', 0.0)
+                    # Récupérer le score FAISS (peut être 'score_faiss' ou 'score_similarite')
+                    res['final_score'] = res.get('score_faiss', res.get('score_similarite', 0.0))
             
             # Étape 3: Formater les résultats et sauvegarder les inférences
             resultats_formates = []

@@ -196,10 +196,11 @@ class WorkflowService:
             
             for idx, resultat in enumerate(resultats_rerankes):
                 try:
-                    # Calculer le score final (moyenne pondérée)
-                    score_faiss = resultat.get("score_faiss", 0.0)
-                    score_reranking = resultat.get("score_reranking", 0.0)
-                    score_final = (0.3 * score_faiss + 0.7 * score_reranking) if score_reranking else score_faiss
+                    # Récupérer les scores (le reranking service utilise 'faiss_score' et 'reranking_score')
+                    score_faiss = resultat.get("faiss_score", 0.0)
+                    score_reranking = resultat.get("reranking_score", 0.0)
+                    # Le score final est déjà calculé par le service de reranking
+                    score_final = resultat.get("final_score", score_faiss)
                     
                     # Sauvegarder l'inférence dans MongoDB
                     inference_result = await self.reranking_service.sauvegarder_inference(

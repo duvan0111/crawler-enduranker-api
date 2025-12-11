@@ -72,9 +72,12 @@ curl -X POST "http://localhost:8000/api/workflow/process" \
 
 - **Wikipedia** : Articles éducatifs multilingues (FR/EN)
 - **GitHub** : Repositories, README, documentation
+- **YouTube** : Vidéos éducatives via API officielle (gratuit, 10k requêtes/jour) 🆕
 - **Medium** : Articles de blog et tutoriels
 - **Génération automatique d'embeddings** (384 dimensions)
-- **Extraction de métadonnées** : auteur, date, mots-clés
+- **Extraction de métadonnées** : auteur, date, mots-clés, popularité
+
+➡️ **[Guide YouTube Integration](docs/YOUTUBE_INTEGRATION.md)**
 
 ### 🔍 Recherche Sémantique FAISS
 

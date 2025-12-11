@@ -6,6 +6,7 @@ Cette version est plus compatible avec FastAPI et ne bloque pas le serveur.
 import logging
 import time
 import requests
+import os
 from datetime import datetime
 from typing import List, Dict, Optional
 import pymongo
@@ -30,6 +31,11 @@ class SimpleCrawlerService:
         
         # Service pour gérer les requêtes utilisateur
         self.user_query_service = get_user_query_service_simple(mongodb_url, mongodb_db)
+        
+        # Clé API YouTube (à configurer via variable d'environnement)
+        self.youtube_api_key = os.getenv('YOUTUBE_API_KEY', '')
+        if not self.youtube_api_key:
+            logger.warning("⚠️  YOUTUBE_API_KEY non configurée - YouTube sera désactivé")
         
         # Charger le modèle sentence-transformers
         logger.info("📥 Chargement du modèle sentence-transformers/all-MiniLM-L6-v2...")
@@ -89,9 +95,12 @@ class SimpleCrawlerService:
         
         question = question.strip()
         
-        # Valider les sources (Medium en dernier pour éviter les erreurs 403)
+        # Valider les sources (YouTube ajouté si API key disponible)
         if sources is None:
-            sources = ['github', 'wikipedia', 'medium']
+            sources = ['github', 'wikipedia', 'youtube', 'medium']
+            # Retirer YouTube si pas de clé API
+            if not self.youtube_api_key:
+                sources.remove('youtube')
         
         # Définir les langues par défaut
         if langues is None:
@@ -129,6 +138,8 @@ class SimpleCrawlerService:
                     ressources = await self._collecter_wikipedia(question, max_par_site, langues)
                 elif source == 'github':
                     ressources = await self._collecter_github(question, max_par_site)
+                elif source == 'youtube':
+                    ressources = await self._collecter_youtube(question, max_par_site, langues)
                 elif source == 'medium':
                     ressources = await self._collecter_medium(question, max_par_site)
                 else:
@@ -317,6 +328,132 @@ class SimpleCrawlerService:
         
         except Exception as e:
             logger.warning(f"⚠️  Erreur GitHub: {e}")
+        
+        return ressources
+    
+    async def _collecter_youtube(self, question: str, max_results: int, langues: List[str]) -> List[RessourceEducativeModel]:
+        """Collecte depuis YouTube Data API v3"""
+        ressources = []
+        
+        if not self.youtube_api_key:
+            logger.warning("⚠️  YouTube API key manquante - collecte ignorée")
+            return ressources
+        
+        try:
+            # Délai pour éviter le rate limiting
+            time.sleep(1)
+            
+            api_url = "https://www.googleapis.com/youtube/v3/search"
+            
+            # Recherche de vidéos éducatives
+            for langue in langues:
+                try:
+                    # Mapper les codes de langue pour YouTube
+                    relevance_language = 'fr' if langue == 'fr' else 'en'
+                    
+                    params = {
+                        'part': 'snippet',
+                        'q': f"{question} tutorial education",
+                        'key': self.youtube_api_key,
+                        'type': 'video',
+                        'videoDuration': 'medium',  # 4-20 minutes (idéal pour l'éducation)
+                        'videoDefinition': 'any',
+                        'relevanceLanguage': relevance_language,
+                        'safeSearch': 'strict',
+                        'order': 'relevance',  # ou 'viewCount' pour les plus populaires
+                        'maxResults': min(max_results, 10)  # YouTube API limite à 50
+                    }
+                    
+                    headers = {
+                        'Accept': 'application/json',
+                        'User-Agent': 'EduRanker-Bot/1.0 (https://eduranker.com)'
+                    }
+                    
+                    response = requests.get(api_url, params=params, headers=headers, timeout=15)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    if 'items' in data:
+                        # Récupérer les détails des vidéos (vues, likes, durée)
+                        video_ids = [item['id']['videoId'] for item in data['items'] if 'videoId' in item['id']]
+                        
+                        if video_ids:
+                            # Délai avant la requête de détails
+                            time.sleep(0.5)
+                            
+                            details_url = "https://www.googleapis.com/youtube/v3/videos"
+                            details_params = {
+                                'part': 'statistics,contentDetails,snippet',
+                                'id': ','.join(video_ids),
+                                'key': self.youtube_api_key
+                            }
+                            
+                            details_response = requests.get(details_url, params=details_params, headers=headers, timeout=15)
+                            details_response.raise_for_status()
+                            details_data = details_response.json()
+                            
+                            # Créer un mapping des détails par video_id
+                            video_details_map = {item['id']: item for item in details_data.get('items', [])}
+                        
+                        for item in data['items'][:max_results]:
+                            if 'videoId' not in item['id']:
+                                continue
+                                
+                            video_id = item['id']['videoId']
+                            snippet = item.get('snippet', {})
+                            
+                            titre = snippet.get('title', '')
+                            description = snippet.get('description', '')
+                            channel_title = snippet.get('channelTitle', '')
+                            
+                            # Récupérer les statistiques si disponibles
+                            video_details = video_details_map.get(video_id, {})
+                            statistics = video_details.get('statistics', {})
+                            view_count = int(statistics.get('viewCount', 0))
+                            like_count = int(statistics.get('likeCount', 0))
+                            
+                            # Construire le texte complet pour l'embedding
+                            texte_complet = f"{titre}. {description}"
+                            resume = description[:500] if len(description) > 500 else description
+                            
+                            # Générer l'embedding
+                            embedding = self._generer_embedding(texte_complet)
+                            
+                            # URL de la vidéo
+                            video_url = f"https://www.youtube.com/watch?v={video_id}"
+                            
+                            # Extraire les tags comme mots-clés
+                            tags = snippet.get('tags', [])
+                            if not tags:
+                                tags = [question]
+                            
+                            ressource = RessourceEducativeModel(
+                                titre=titre,
+                                url=video_url,
+                                source='youtube',
+                                langue=relevance_language,
+                                auteur=channel_title,
+                                date=snippet.get('publishedAt', ''),
+                                texte=texte_complet,
+                                resume=resume,
+                                embedding=embedding,
+                                popularite=view_count + (like_count * 10),  # Score combiné
+                                type_ressource='video',
+                                mots_cles=tags[:5],  # Limiter à 5 tags
+                                requete_originale=question,
+                                date_collecte=datetime.now()
+                            )
+                            
+                            ressources.append(ressource)
+                    
+                    logger.info(f"✅ YouTube ({langue}): {len([r for r in ressources if r.langue == relevance_language])} vidéos collectées")
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️  Erreur YouTube ({langue}): {e}")
+                    continue
+        
+        except Exception as e:
+            logger.warning(f"⚠️  Erreur YouTube générale: {e}")
         
         return ressources
     

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Base de données MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: eduranker-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: eduranker2025
+      MONGO_INITDB_DATABASE: eduranker_db
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - eduranker-network
+
+  # API FastAPI
+  api:
+    build:
+      context: ./crawler-enduranker-api
+      dockerfile: Dockerfile
+    container_name: eduranker-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://admin:eduranker2025@mongodb:27017/eduranker_db?authSource=admin
+      - MONGODB_DB_NAME=eduranker_db
+      - FAISS_INDEX_PATH=data/faiss_index
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./crawler-enduranker-api:/app
+      - api_data:/app/data
+      - api_models:/app/models
+    depends_on:
+      - mongodb
+    networks:
+      - eduranker-network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./crawler-enduranker-frontend
+      dockerfile: Dockerfile
+    container_name: eduranker-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - eduranker-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  api_data:
+    driver: local
+  api_models:
+    driver: local
+
+networks:
+  eduranker-network:
+    driver: bridge

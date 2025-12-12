@@ -336,7 +336,7 @@ for i, r in enumerate(data['resultats'], 1):
 crawler-enduranker-api/
 ├── 📄 main.py                          # Point d'entrée de l'application
 ├── 📄 requirements.txt                 # Dépendances Python
-├── 📄 docker-compose.yml               # Configuration Docker (MongoDB)
+├── 📄 docker compose.yml               # Configuration Docker (MongoDB)
 ├── 📄 .env                            # Variables d'environnement
 │
 ├── 📁 src/                            # Code source principal
@@ -417,7 +417,7 @@ git clone <votre-repo-url>
 cd crawler-enduranker-api
 
 # 2. Démarrer MongoDB avec Docker
-docker-compose up -d
+docker compose up -d
 
 # 3. Créer l'environnement virtuel
 python3 -m venv venv
@@ -495,7 +495,7 @@ curl -X POST "http://localhost:8000/api/workflow/process" \
 
 ```bash
 # Terminal 1 : Démarrer MongoDB (si Docker)
-docker-compose up -d
+docker compose up -d
 
 # Terminal 2 : Démarrer l'API
 python main.py
@@ -1136,14 +1136,15 @@ Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus
 - 📚 **Notebooks** : Dossier `/notebooks`
 
 ### Contact
-- 📧 **Email** : eduranker@example.com
-- 💬 **Issues** : [GitHub Issues](https://github.com/votre-repo/issues)
-- 📝 **Wiki** : [GitHub Wiki](https://github.com/votre-repo/wiki)
+- 📧 **Email** : franklin.chamdjou@facsciences-uy1.cm
+- **Tel :** : 655 595 568
+<!-- - 💬 **Issues** : [GitHub Issues](https://github.com/votre-repo/issues) -->
+<!-- - 📝 **Wiki** : [GitHub Wiki](https://github.com/votre-repo/wiki) -->
 
 ### Liens Utiles
-- 🔗 **Repository** : https://github.com/votre-repo
-- 📊 **Documentation complète** : https://docs.eduranker.com
-- 🎓 **Tutoriels** : https://tutorials.eduranker.com
+- 🔗 **Repository** : https://github.com/duvan0111/crawler-enduranker-api.git
+<!-- - 📊 **Documentation complète** : https://docs.eduranker.com -->
+<!-- - 🎓 **Tutoriels** : https://tutorials.eduranker.com -->
 
 ---
 
@@ -1151,6 +1152,6 @@ Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus
 
 **⭐ Si ce projet vous aide, n'hésitez pas à mettre une étoile ! ⭐**
 
-Made with ❤️ by EduRanker Team
+Made with ❤️ by Franklin Duvan C. N.
 
 </div>

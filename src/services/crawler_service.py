@@ -141,7 +141,8 @@ class SimpleCrawlerService:
                 elif source == 'youtube':
                     ressources = await self._collecter_youtube(question, max_par_site, langues)
                 elif source == 'medium':
-                    ressources = await self._collecter_medium(question, max_par_site)
+                    # ressources = await self._collecter_medium(question, max_par_site)
+                    print("collect sur Medium pas encore terminé")
                 else:
                     continue
                 
